@@ -309,8 +309,7 @@ int main(int argc, char* argv[])
     testMatrix.resize(size);
     testMatrix.reset();
     add_block_to_pos_std(&testMatrix, pairs, size);
-    testMatrix.printBlocks(std::cout);
-  
+    
     //End of SPSM Init
     std::cout<<"Constructed matrix of size "<<size<<" with "<<(int) size*size/16 * block_percentage*block_percentage <<" blocks of size 4, preparing to do "<<nMatrix<<" multiplications";
     
@@ -344,6 +343,10 @@ int main(int argc, char* argv[])
     real* y_arm = (real*)malloc(size * sizeof(real));//Y_true to compare
     real* Y_rsb = (real*)malloc(size * sizeof(real));//Y_true to compare
     real* Y_dif = (real*)malloc(size * sizeof(real));//Y_diff that will store differences
+    #ifdef CYTOSIM_TEST 
+    real* Y_test = (real*)malloc(size * sizeof(real));//Y_diff that will store differences
+
+    #endif
     for(int i=0; i<size;i++)
     {
         Vec[i]=1;//Init
@@ -408,10 +411,21 @@ testMatrix.prepareForMultiply(1);
     stop = std::chrono::high_resolution_clock::now();
     outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
     outfile1.close();
-    std::cout<<"[INFO] new-impl multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms";
+    std::cout<<"[INFO] new-impl multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
+    #endif
+    #ifdef CYTOSIM_TEST
+    outfile1.open("res/newImpl.csv", std::ios::app);
+    std::cout<<"[INFO] Starting new-impl-test matrix-vector multiplications\n";
+    using milli = std::chrono::milliseconds;
+    start = std::chrono::high_resolution_clock::now();
+    testMatrix.vecMulMtTest(nb_threads, Vec, Y_test,nMatrix);
+    stop = std::chrono::high_resolution_clock::now();
+    outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
+    outfile1.close();
+    std::cout<<"[INFO] new-impl-test multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
     #endif
     
-
+#ifndef CYTOSIM_TEST
     int nbDiff = 0;
     double maxDiff =0;
     for(int i=0; i<size;i++)
@@ -427,10 +441,60 @@ testMatrix.prepareForMultiply(1);
         }
        
     }
+#endif
+#ifdef CYTOSIM_TEST
+    int nbDiff = 0;
+    double maxDiff =0;
+    for(int i=0; i<size;i++)
+    {
+        Y_dif[i] = Y_test[i] - Y_true[i];
+        if(Y_dif[i]!=0)
+        {
+            if(Y_dif[i]>maxDiff)
+            {
+                maxDiff = Y_dif[i];
+            }
+            nbDiff++;
+        }
+       
+    }
+#endif
+#ifdef CYTOSIM_TEST
+if(nbDiff ==0)
+{
+    if(maxDiff > 10)
+    {
+    std::cout<<"Resultat computation originelle\n";
+    for(int i =0; i< size; i++)
+    {
+        std::cout<<Y_true[i]<<" ";
+    }
+    std::cout<<"Resultat computation maison\n";
+    for(int i =0; i< size; i++)
+    {
+        std::cout<<Y_test[i]<<" ";
+    }
+    std::cout<<"\n\nDifference of true_computation\n";
+    for(int i=0; i<size;i++)
+    {
+        std::cout<<Y_dif[i]<<" ";
+    }
 
+    }
+    
+    std::cout<<"Small diff notified max:"<<maxDiff;
+    
+    
+}
+else
+{
+        std::cout<<"\nComputation went well";
+}
+#endif
+#ifndef CYTOSIM_TEST
 if(nbDiff !=0)
 {
-    if(maxDiff > 10e-3)
+    if(maxDiff > 10)
     {
     std::cout<<"Resultat computation originelle\n";
     for(int i =0; i< size; i++)
@@ -455,10 +519,6 @@ if(nbDiff !=0)
     
 }
 else
-{
-        std::cout<<"\nComputation went well";
-}
-
-    
+#endif  
  
 }

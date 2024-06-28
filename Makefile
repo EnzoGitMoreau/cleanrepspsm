@@ -6,14 +6,12 @@ OPENMP_DIR = /opt/Homebrew/Cellar/libomp/18.1.6
 ARM_PER_LIB = /opt/arm/armpl_24.04_flang-new_clang_18
 CURRENT_DIR = $(shell pwd)
 EXEC = tests
-CXXFLAGS =  -Xclang -std=c++20 -fopenmp=libomp  -g 
+CXXFLAGS =  -Xclang -std=c++20 -fopenmp=libomp  -Ofast -flto
 VARS = -DMATRIXMARKET -DMACOS
 
 
 INCLUDES = -Iinclude/ \
-	-Ibin/boost_1_84_0/\
 	-I$(OPENBLAS_DIR)\
-	-I$(GraphBLAS) \
 	-I$(OPENMP_DIR)/lib \
 	-I$(ARM_PER_LIB)/include
 	
@@ -29,12 +27,16 @@ SRCS = $(SRC_PATH)/main.cpp \
 OBJS = $(SRCS:.cpp=.o)
 OBJS := $(OBJS:.cc=.o)
 TARGET = $(EXEC)
+
+testing:
+	$(MAKE) all VARS="-DMACOS -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW -DCYTOSIM_TEST"
 classic:
 	$(MAKE) all VARS="-DMATRIXMARKET -DMACOS -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW"
-matrixmarket:
+mmkt:
 	$(MAKE) all VARS="-DMATRIXMARKET -DMACOS -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW"
 linux:
 	$(MAKE) -f Makefile.linux VARS="-DMATRIXMARKET -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW -DRSB"
+
 all:
 	$(MAKE) clean
 	$(MAKE) compile
