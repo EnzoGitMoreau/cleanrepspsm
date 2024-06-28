@@ -33,12 +33,12 @@ all:
 compile: $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $(LIB_DIRS)  -o $(TARGET) $(OBJS) $(LIBS)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(LIB_DIRS) $(VARS)  -o $(TARGET) $(OBJS) $(LIBS)
 %.o: %.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES)  -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(VARS)  -c $< -o $@
 
 %.o : %.cc
-	$(CXX) $(CXXFLAGS) $(INCLUDES)  -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(VARS) -c $< -o $@
 
 profile:
 	$(MAKE) clean
