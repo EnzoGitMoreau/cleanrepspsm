@@ -460,7 +460,7 @@ testMatrix.prepareForMultiply(1);
     }
 #endif
 #ifdef CYTOSIM_TEST
-if(nbDiff ==0)
+if(nbDiff !=0)
 {
     if(maxDiff > 10)
     {
