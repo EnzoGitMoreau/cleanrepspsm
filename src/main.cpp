@@ -292,7 +292,7 @@ int main(int argc, char* argv[])
         
     }
     #endif
-    
+    omp_set_num_threads(nb_threads);
     
 
     
@@ -362,7 +362,7 @@ testMatrix.prepareForMultiply(1);
 
 
     //OpenMP settings according to user's number of threads 
-    omp_set_num_threads(nb_threads);
+    
     std::cout<<"\n[STARTUP] OpenMP is enabled with " << omp_get_max_threads() <<" threads\n";
     #ifdef ARMPL
     std::cout<<"[STARTUP] ARM PL is working\n";
