@@ -1,0 +1,51 @@
+CXX = g++
+CC = gcc
+
+
+OPENMP_DIR = /opt/Homebrew/Cellar/libomp/18.1.6
+
+CURRENT_DIR = $(shell pwd)
+EXEC = tests
+CXXFLAGS = -std=c++20  -fopenmp -O3  -g
+CCGLAGS = -std=c++20
+
+INCLUDES = -Iinclude/ `librsb-config --I_opts --cxxflags`
+	
+       
+SRC_PATH = src
+LIB_DIRS = -L/home/co-more1/SPSMVecMul/bin/boost_1_84_0/stage/lib -L/usr/local/lib  
+LIBS = -lopenblas `librsb-config --static --ldflags --extra_libs`
+SRCS = $(SRC_PATH)/main.cpp \
+ $(SRC_PATH)/sparmatsymblk.cc \
+ $(SRC_PATH)/MatSymBMtInstance.cpp \
+ $(SRC_PATH)/matsym.cc
+ 
+
+OBJS = $(SRCS:.cpp=.o)
+OBJS := $(OBJS:.cc=.o)
+TARGET = $(EXEC)
+
+all:
+	$(MAKE) -f Makefile.linux clean
+	$(MAKE) -f Makefile.linux compile
+
+	
+compile: $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $(LIB_DIRS)  -o $(TARGET) $(OBJS) $(LIBS)
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES)  -c $< -o $@
+
+%.o : %.cc
+	$(CXX) $(CXXFLAGS) $(INCLUDES)  -c $< -o $@
+
+profile:
+	$(MAKE) clean
+	$(MAKE) all CXXFLAGS="$(CXXFLAGS) -pg -O3"
+
+install:
+
+clean:
+	rm -f $(OBJS) $(TARGET)
+

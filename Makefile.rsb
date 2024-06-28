@@ -1,0 +1,25 @@
+makefile
+Copier le code
+# Makefile to compile a single C file using gcc
+
+# Compiler
+CC = gcc
+
+# Compiler flags
+CFLAGS = -Wall -Wextra -std=c++20
+
+# Source file
+SRC = mysbp.cpp
+
+# Output executable
+OUT = your_program
+
+# Default target
+all: $(OUT)
+
+$(OUT): $(SRC)
+    $(CC) $(CFLAGS) $< -o $@
+
+# Clean target
+clean:
+    rm -f $(OUT)
