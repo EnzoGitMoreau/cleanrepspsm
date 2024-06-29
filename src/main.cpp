@@ -452,7 +452,7 @@ int maxDiff_rsb = 0;
     for(int i=0; i<size;i++)
     {
         #ifdef RSB
-        Y_diff_rsb = Y_rsb[i] -Y_true[i];
+        Y_diff_rsb[i] = Y_rsb[i] -Y_true[i];
         if(Y_diff_rsb[i]>maxDiff_rsb)
         {
             maxDiff_rsb = Y_diff_rsb[i];
