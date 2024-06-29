@@ -592,7 +592,7 @@ public:
         {
             
             workThread3(barrier2, thread_nb);
-            
+            barrier.arrive_and_wait();
         }
    
         
