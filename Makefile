@@ -28,15 +28,13 @@ OBJS = $(SRCS:.cpp=.o)
 OBJS := $(OBJS:.cc=.o)
 TARGET = $(EXEC)
 
-testing:
+macOS:
 	$(MAKE) all VARS="-DMACOS -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW -DCYTOSIM_TEST"
-classic:
-	$(MAKE) all VARS="-DMATRIXMARKET -DMACOS -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW"
-mmkt:
+macOS-mmkt:
 	$(MAKE) all VARS="-DMATRIXMARKET -DMACOS -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW"
 linux:
-	$(MAKE) -f Makefile.linux VARS="-DMATRIXMARKET -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW -DRSB"
-linux-test:
+	$(MAKE) -f Makefile.linux VARS="-DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW -DRSB"
+linux-mmkt:
 	$(MAKE) -f Makefile.linux VARS="-DMATRIXMARKET -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW -DCYTOSIM_TEST -DRSB"
 
 all:
@@ -60,7 +58,6 @@ profile:
 
 	
 install:
-	install_name_tool -add_rpath $(CURRENT_DIR)/bin/boost_1_84_0/stage/lib $(EXEC) && \
        install_name_tool -add_rpath /usr/local/lib $(EXEC)&& \
        install_name_tool -add_rpath $(OPENMP_DIR)/lib $(EXEC)
 	    install_name_tool -add_rpath $(ARM_PER_LIB)/lib $(EXEC)
