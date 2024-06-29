@@ -443,11 +443,22 @@ testMatrix.prepareForMultiply(1);
     }
 #endif
 #ifdef CYTOSIM_TEST
+#ifdef RSB
+real* Y_diff_rsb = (real*) malloc(real*sizeof(size));
+int maxDiff_rsb = 0;
+#endif 
     int nbDiff = 0;
     double maxDiff =0;
     for(int i=0; i<size;i++)
     {
-        Y_dif[i] = Y_test[i] - Y_rsb[i];
+        #ifdef RSB
+        Y_diff_rsb = Y_rsb[i] -Y_true[i];
+        if(Y_diff_rsb[i]>maxDiff_rsb)
+        {
+            maxDiff_rsb = Y_diff_rsb[i];
+        }
+        #endif
+        Y_dif[i] = Y_test[i] - Y_true[i];
         if(Y_dif[i]!=0)
         {
             if(Y_dif[i]>maxDiff)
@@ -458,8 +469,6 @@ testMatrix.prepareForMultiply(1);
         }
        
     }
-#endif
-#ifdef CYTOSIM_TEST
 if(nbDiff !=0)
 {
     if(maxDiff > 10)
@@ -483,7 +492,9 @@ if(nbDiff !=0)
     }
     
     std::cout<<"Small diff notified max:"<<maxDiff;
-    
+    #ifdef RSB 
+    std::cout<<"Diff rsb-true"<<maxDiff_rsb;
+    #endif
     
 }
 else
