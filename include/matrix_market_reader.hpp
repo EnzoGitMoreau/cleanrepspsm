@@ -80,6 +80,7 @@ public:
 					int j = std::stoi(splitLine[1]);
 					real value;
 					iss>>value;
+					value = (int) value;
 					real& value_in_matrix = matrix->element(i,j);
 					value_in_matrix = value;
 				
