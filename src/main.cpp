@@ -444,10 +444,10 @@ testMatrix.prepareForMultiply(1);
 #endif
 #ifdef CYTOSIM_TEST
 #ifdef RSB
-real* Y_diff_rsb = (real*) malloc(real*sizeof(size));
+real* Y_diff_rsb = (real*) malloc(size*sizeof(real));
 int maxDiff_rsb = 0;
 #endif 
-    int nbDiff = 0;
+    int nbDiff = 0; 
     double maxDiff =0;
     for(int i=0; i<size;i++)
     {
