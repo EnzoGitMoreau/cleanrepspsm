@@ -447,7 +447,7 @@ testMatrix.prepareForMultiply(1);
     double maxDiff =0;
     for(int i=0; i<size;i++)
     {
-        Y_dif[i] = Y_rsb[i] - Y_res[i];
+        Y_dif[i] = Y_rsb[i] - Y_true[i];
         if(Y_dif[i]!=0)
         {
             if(Y_dif[i]>maxDiff)
