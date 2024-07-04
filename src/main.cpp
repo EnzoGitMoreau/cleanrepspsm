@@ -3,15 +3,55 @@
 
 //#define RSB 
 #include <cstdlib>
-
-
 #include <stdio.h>
 #include <stdlib.h>
+
+#include <iostream>
+#ifndef BLOCKSIZE
+    #define UNVALID
+    #define ERROR_MESSAGE "Please specify a block_size"
+#endif
+#ifdef BLOCKSIZE
+    #if BLOCKSIZE>=5
+        #define UNVALID
+        #define ERROR_MESSAGE "Block size must be 2,3 or 4"
+    #endif 
+    #if BLOCKSIZE <= 1
+        #define UNVALID
+        #define ERROR_MESSAGE "Block size must be 2,3 or 4"
+
+    #endif 
+#endif
+#ifdef MATRIXMARKET
+    #ifdef CYTMAT
+        #ifndef UNVALID
+        #define UNVALID
+        #endif
+        #ifndef ERROR_MESSAGE
+        #define ERROR_MESSAGE "Unvalid compilation: Choose between MATRIXMARKET and CYTMAT, please refer to makefile"
+        #endif
+    #endif
+#endif
+
+#ifdef MACOS
+    #ifdef RSB
+        #ifndef UNVALID
+        #define UNVALID
+        #endif 
+        #ifndef ERROR_MESSAGE
+        #define ERROR_MESSAGE "Unvalid compilation: no RSB possible on macOS"
+        #endif 
+    #endif 
+#endif
+#ifndef UNVALID
 #ifdef MATRIXMARKET
 #include "matrix_market_reader.hpp"
 #endif
+#ifdef CYTMAT
+#include "cytosim_matrix_reader.hpp"
+#endif
 #include "matsym.h"
-#include <iostream>
+
 #include "sparmatsymblk.h"
 #include <random>
 #include "matrix.h"
@@ -25,7 +65,7 @@
 #ifdef RSB
 #include <rsb.hpp>
 #endif
-#ifdef MACOS
+#ifdef ARMPL
 #include "armpl.h"
 #endif
 #include <chrono>
@@ -41,80 +81,9 @@ typedef std::deque<Tuple2> Queue2;
 
 
 
-void printMatrixValues(MatrixSymmetric* matrix, bool only_int = true)
-{
-    char str[32];
-    real* val = matrix->data();
-    std::cout << "\nMatrix of size : "<< matrix->size()<<"\n";
 
-    for(int i=0; i<matrix->size(); i++)
-    {
-        
-        
-        for(int j = 0; j<matrix->size();j++)
-        {
-        if(!only_int){
-        snprintf(str, sizeof(str), "%9.2f", *matrix->addr(i,j));
-        }
-        else
-        {
-            std::snprintf(str,sizeof(str), "%d ", (int)*matrix->addr(i,j));
-        }
-        std::cout << str <<"" ;
-        }
-        if(i!=matrix->size()-1)
-        {
-            std::cout<<"\n";
-        }
-       
-    }
-}
-void setMatrixRandomValues(MatrixSymmetric matrix)
-{
-    #ifdef VERBOSE
-    std::cout << "Setting random values";
-    #endif
-    try{
 
-    real* val = matrix.data();
-        
-#ifdef VERBOSE
-    std::cout << "Matrix of size : "<< matrix.size()<<"\n";
-#endif
-    for(int i=0; i<matrix.size(); i++)
-    {
-    
-        for(int j = 0; j<=i;j++)
-        {
-                ///real value = dis(gen);
-                if(i==j)
-                {
-                    val[i*matrix.size()+j] = 0;
-                }
-                else
-                {
-                    if(true)
-                    {
-                        val[i*matrix.size()+j] =(i+j)+1/(i+j);
-                        val[j*matrix.size()+i] =(i+j)+1/(i+j);
-                    }
-                    else
-                    { val[i*matrix.size()+j] = 0;}
-                    
-                }
-                //val[i*matrix.size() + j] = (i+j)%100;
-                //val[j*matrix.size() + i] = (i+j)%100;
-         
-        }
-    }
-    }
-    catch(std::exception){
-        std::cout << "Error loading RNG";
-    }
-    
-}
-
-#ifdef MACOS
+#ifdef ARMPL
 double* amd_matrix_vecmul(int size, int nTests, std::vector<std::pair<int, int>> pairs)
 {
     double* values = (double*) malloc(sizeof(double)*size*size);
@@ -220,18 +189,19 @@ int main(int argc, char* argv[])
 {
 
     using milli = std::chrono::milliseconds;
-    std::string inputPath;
+    
     auto start = std::chrono::high_resolution_clock::now();
     auto stop= std::chrono::high_resolution_clock::now();
     std::ofstream outfile1;
-    SparMatSymBlk testMatrix;
+    SparMatSymBlk testMatrix = SparMatSymBlk();
     
-    int blocksize = 4;
-    int size;
+
+    int size = 0;
     int nb_threads;
     int nMatrix = 1;
     double block_percentage = 0.10;
     #ifndef MATRIXMARKET
+    #ifndef CYTMAT
     if (argc < 4) {
         std::cerr << "Usage: tests nb_threads matSize" << std::endl;
         
@@ -270,8 +240,10 @@ int main(int argc, char* argv[])
         }
         }
     }
+    #endif
     #endif 
     #ifdef MATRIXMARKET
+    std::string inputPath;
     if(argc < 4)
     {
         std::cerr << "Usage tests nbThreads nbMult matrixPath";
@@ -292,6 +264,30 @@ int main(int argc, char* argv[])
         
     }
     #endif
+    #ifdef CYTMAT
+    std::string matPath;
+    std::string vectorPath;
+    if(argc < 5)
+    {
+        std::cerr << "Usage tests nbThreads nbMult matrixPath vectorPath";
+        return 1;
+    }
+    else
+    {
+        try
+        {
+            nb_threads = std::stoi(argv[1]);
+            nMatrix = std::stoi(argv[2]);
+            matPath = argv[3];
+            vectorPath = argv[4];
+        }
+        catch(const std::exception& e)
+        {
+            std::cerr << e.what() << '\n';
+        }
+        
+    }
+    #endif
     omp_set_num_threads(nb_threads);
     
 
@@ -303,9 +299,6 @@ int main(int argc, char* argv[])
 
     #ifndef MATRIXMARKET
     std::vector<std::pair<int, int>> pairs = select_random_points(size/4,(int) size*size/16 * block_percentage*block_percentage);
-    std::cout<<"ici";
-    
-    
     testMatrix.resize(size);
     testMatrix.reset();
     add_block_to_pos_std(&testMatrix, pairs, size);
@@ -318,7 +311,6 @@ int main(int argc, char* argv[])
     //Reading from a Matrix Market file 
     #ifdef MATRIXMARKET
     std::cout<<"Asked to read "<<inputPath<<" and to do "<<nMatrix<<" mult with "<<nb_threads<<" threads";
-    
     #ifndef RSB 
     MatrixReader matrixReader(inputPath, &testMatrix,nb_threads);
     #endif 
@@ -327,20 +319,35 @@ int main(int argc, char* argv[])
     rsb::RsbMatrix<double>* mtx;
     MatrixReader matrixReader(inputPath, &testMatrix,&mtx,nb_threads);
     #endif
-    std::cout<<"\n[INFO]Finished reading matrix";
-    size = matrixReader.problemSize();
+    #endif 
 
+    #ifdef CYTMAT
+    real* Vec;
+    std::cout<<"Asked to read "<<matPath<<" and "<<vectorPath<< " and to do "<<nMatrix<<" mult with "<<nb_threads<<" threads";
+    #ifndef RSB 
+    CytMatrixReader CytmatrixReader(matPath,vectorPath, &testMatrix,&Vec,nb_threads);
+    #endif 
+    #ifdef RSB 
+    rsb::RsbLib rsblib;
+    rsb::RsbMatrix<double>* mtx;
+    
+    CytMatrixReader CytmatrixReader(matPath, vectorPath, &testMatrix,&mtx, &Vec, nb_threads);
+    #endif
+    std::cout<<"\n[INFO]Finished reading matrix and vector";
+    size = CytmatrixReader.problemSize();
+    #endif
 
 
 
     
    
-    #endif 
-
+    
+    #ifndef CYTMAT
     real* Vec = (real*)malloc(size * sizeof(real));//Defining vector to do MX
+    #endif
     real* Y_res = (real*)malloc(size * sizeof(real));//Y
     real* Y_true = (real*)malloc(size * sizeof(real));//Y_true to compare
-    real* y_arm = (real*)malloc(size * sizeof(real));//Y_true to compare
+    
     real* Y_rsb = (real*)malloc(size * sizeof(real));//Y_true to compare
     real* Y_dif = (real*)malloc(size * sizeof(real));//Y_diff that will store differences
     #ifdef CYTOSIM_TEST 
@@ -365,6 +372,7 @@ testMatrix.prepareForMultiply(1);
     
     std::cout<<"\n[STARTUP] OpenMP is enabled with " << omp_get_max_threads() <<" threads\n";
     #ifdef ARMPL
+    real* y_arm = (real*)malloc(size * sizeof(real));//Y_true to compare
     std::cout<<"[STARTUP] ARM PL is working\n";
     
     outfile1.open("res/armpl.csv", std::ios::app);
@@ -407,7 +415,7 @@ testMatrix.prepareForMultiply(1);
     std::cout<<"[INFO] Starting new-impl matrix-vector multiplications\n";
     using milli = std::chrono::milliseconds;
     start = std::chrono::high_resolution_clock::now();
-    testMatrix.vecMulMt2(nb_threads, Vec, Y_res,nMatrix);
+    //testMatrix.vecMulMt2(nb_threads, Vec, Y_res,nMatrix);
     stop = std::chrono::high_resolution_clock::now();
     outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
     outfile1.close();
@@ -418,12 +426,13 @@ testMatrix.prepareForMultiply(1);
     std::cout<<"[INFO] Starting new-impl-test matrix-vector multiplications\n";
     using milli = std::chrono::milliseconds;
     start = std::chrono::high_resolution_clock::now();
-    testMatrix.vecMulMtTest(nb_threads, Vec, Y_test,nMatrix);
+    //testMatrix.vecMulMtTest(nb_threads, Vec, Y_test,nMatrix);
     stop = std::chrono::high_resolution_clock::now();
     outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
     outfile1.close();
     std::cout<<"[INFO] new-impl-test multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
     #endif
+   
     
 #ifndef CYTOSIM_TEST
     int nbDiff = 0;
@@ -458,7 +467,7 @@ int maxDiff_rsb = 0;
             maxDiff_rsb = Y_diff_rsb[i];
         }
         #endif
-        Y_dif[i] = Y_test[i] - Y_true[i];
+        Y_dif[i] = Y_res[i] - Y_true[i];
         if(Y_dif[i]!=0)
         {
             if(Y_dif[i]>maxDiff)
@@ -471,7 +480,7 @@ int maxDiff_rsb = 0;
     }
 if(nbDiff !=0)
 {
-    if(maxDiff > 10)
+    if(maxDiff > 1)
     {
     std::cout<<"Resultat computation originelle\n";
     for(int i =0; i< size; i++)
@@ -505,7 +514,7 @@ else
 #ifndef CYTOSIM_TEST
 if(nbDiff !=0)
 {
-    if(maxDiff > 10)
+    if(maxDiff > nMatrix)
     {
     std::cout<<"Resultat computation originelle\n";
     for(int i =0; i< size; i++)
@@ -531,5 +540,18 @@ if(nbDiff !=0)
 }
 else
 #endif  
- 
+
 }
+#endif
+#ifdef UNVALID
+int main(int argc, char* argv[])
+{
+    #ifdef ERROR_MESSAGE
+    std::cout<<ERROR_MESSAGE;
+    #endif
+    #ifndef ERROR_MESSAGE
+    std::cout<<"Unvalid compilation: no reason found";
+    #endif
+}
+
+#endif 

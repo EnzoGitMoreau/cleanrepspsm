@@ -6,7 +6,7 @@ OPENMP_DIR = /opt/Homebrew/Cellar/libomp/18.1.6
 ARM_PER_LIB = /opt/arm/armpl_24.04_flang-new_clang_18
 CURRENT_DIR = $(shell pwd)
 EXEC = tests
-CXXFLAGS =  -Xclang -std=c++20 -fopenmp=libomp  -Ofast -flto
+CXXFLAGS =  -Xclang -std=c++20 -fopenmp=libomp -O3 -flto -g
 VARS = -DMATRIXMARKET -DMACOS
 
 
@@ -18,7 +18,7 @@ INCLUDES = -Iinclude/ \
        
 SRC_PATH = src
 LIB_DIRS = -L$(OPENBLAS_DIR)/lib  -L/usr/local/lib -L$(OPENMP_DIR)/lib -L$(ARM_PER_LIB)/lib
-LIBS = -lopenblasp-r0.3.27  -larmpl_lp64
+LIBS = -lopenblasp-r0.3.27  
 SRCS = $(SRC_PATH)/main.cpp \
  $(SRC_PATH)/sparmatsymblk.cc \
  $(SRC_PATH)/MatSymBMtInstance.cpp \
@@ -27,16 +27,23 @@ SRCS = $(SRC_PATH)/main.cpp \
 OBJS = $(SRCS:.cpp=.o)
 OBJS := $(OBJS:.cc=.o)
 TARGET = $(EXEC)
+BLOCKSIZE = 4
+
 
 macOS:
-	$(MAKE) all VARS="-DMACOS -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW -DCYTOSIM_TEST"
+	$(MAKE) all VARS="-DMACOS -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW -DCYTOSIM_TEST -DBLOCKSIZE=$(BLOCKSIZE)"
 macOS-mmkt:
-	$(MAKE) all VARS="-DMATRIXMARKET -DMACOS -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW"
+	$(MAKE) all VARS="-DMATRIXMARKET -DMACOS -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_TEST -DCYTOSIM_NEW -DBLOCKSIZE=$(BLOCKSIZE)"
+macOS-cytosimMat:
+	$(MAKE) all VARS="-DCYTMAT -DMACOS -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW -DCYTOSIM_TEST -DBLOCKSIZE=$(BLOCKSIZE)"
 linux:
-	$(MAKE) -f Makefile.linux VARS="-DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW -DRSB"
+	$(MAKE) -f Makefile.linux VARS="-DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW -DRSB -DBLOCKSIZE=$(BLOCKSIZE)"
 linux-mmkt:
-	$(MAKE) -f Makefile.linux VARS="-DMATRIXMARKET -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW -DCYTOSIM_TEST -DRSB"
-
+	$(MAKE) -f Makefile.linux VARS="-DMATRIXMARKET -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW -DCYTOSIM_TEST -DRSB -DBLOCKSIZE=$(BLOCKSIZE)"
+linux-cytosimMat:
+	$(MAKE) -f Makefile.linux VARS="-DCYTMAT -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW -DCYTOSIM_TEST -DRSB -DBLOCKSIZE=$(BLOCKSIZE)"
+unvalid:
+	$(MAKE) all VARS="-DCYTMAT -DMACOS -DMATRIXMARKET -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW -DCYTOSIM_TEST -DBLOCKSIZE=$(BLOCKSIZE)"
 all:
 	$(MAKE) clean
 	$(MAKE) compile
@@ -58,9 +65,9 @@ profile:
 
 	
 install:
-       install_name_tool -add_rpath /usr/local/lib $(EXEC)&& \
-       install_name_tool -add_rpath $(OPENMP_DIR)/lib $(EXEC)
-	    install_name_tool -add_rpath $(ARM_PER_LIB)/lib $(EXEC)
+	install_name_tool -add_rpath /usr/local/lib $(EXEC)
+	install_name_tool -add_rpath $(OPENMP_DIR)/lib $(EXEC)
+	install_name_tool -add_rpath $(ARM_PER_LIB)/lib $(EXEC)
 clean:
 	rm -f $(OBJS) $(TARGET)
 

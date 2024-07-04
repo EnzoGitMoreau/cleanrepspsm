@@ -7,6 +7,11 @@
 
 #ifndef MatSymBMtInstance_hpp
 #define MatSymBMtInstance_hpp
+#ifndef BLOCKSIZE 
+#define BLOCKSIZE 4
+#endif
+
+
 #include <barrier>
 #include <fstream>
 #include <thread>
@@ -15,6 +20,8 @@
 #include <chrono>
 #include "sparmatsymblk.h"
 #include "real.h"
+
+
 
 class MatSymBMtInstance final
 {
@@ -26,7 +33,7 @@ private:
     std::mutex _mutex;
     int big_mat_size;
     real* Y1;
-    int blocksize = 4;
+    
     real* Y2;
     
     std::ofstream tfile;//Debugging purposes only
@@ -150,7 +157,7 @@ public:
         workingIndexes = (int***)malloc(sizeof(int**)*phase_number);
         
         QueueBlock*** phasesTemp = (QueueBlock***) malloc(sizeof(QueueBlock**) * phase_number);
-        threadBlockSize = (int) matrix->size() / (S_BLOCK_SIZE * nbThreads);
+        threadBlockSize = (int) matrix->size() / (BLOCKSIZE * nbThreads);
         int* phase_counter = (int*) malloc(sizeof(int)*phase_number);
         work_lengths = (int**) malloc(sizeof(int*)*phase_number);
         for(int i=0; i<phase_number;i++)
@@ -178,22 +185,14 @@ public:
             SparMatSymBlk::Column* col = &matrix->column_[i];
             if(col->nbb_>0)
             {
-                //std::cout<<"Column number "<<matrix->colidx_[i]<<"->ind_YB : "<<(int) matrix->colidx_[i]/threadBlockSize<<"\n";
                 indY = matrix->colidx_[i]/threadBlockSize;
                 int indice_col = matrix->colidx_[i];
                 
                 for(int j=0; j<col->nbb_; j++)
                 {
                     int indice_ligne = col->inx_[j];
-                    //std::cout<<"Block position :"<<col->inx_[j]<<"-> ind_XB : "<<(int) col->inx_[j]/threadBlockSize<<"ind_YB:"<<indY<<"\n";
                     indX =col->inx_[j]/threadBlockSize;
-                
-                
-
-                
                     int phase =phase_tab[indX-indY];
-                   // std::cout<<"Chosen phase: "<<phase<<"\n";
-                    //phasesTemp[phase][phase_counter[phase]%nbThreads]->push_front(Tuple2( indice_ligne, indice_col,swap, &matrix->block(col->inx_[j],matrix->colidx_[i])));
                     Block data;
                     Matrix44 matrix= col->blk_[j];
                     data.a0 = matrix.val[0x0];
@@ -213,8 +212,8 @@ public:
                     data.aE = matrix.val[0xE];
                     data.aF = matrix.val[0xF];
                     
-                    data.index_x = indice_ligne * blocksize;
-                    data.index_y = indice_col * blocksize;
+                    data.index_x = indice_ligne * BLOCKSIZE;
+                    data.index_y = indice_col * BLOCKSIZE;
                     
                   
                     phasesTemp[phase][indX]->push_front(data);
@@ -232,9 +231,8 @@ public:
             }
             
         }
-        //std::ofstream outfile1;
-        //outfile1.open("error.txt", std::ios::app);
-        for(int i=0; i<phase_number; i++)//Putting in order for threads
+       
+        for(int i=0; i<phase_number; i++)
         {
             for(int j=0; j<nbThreads;j++)
             {
@@ -244,7 +242,7 @@ public:
                 
                 work_lengths[i][j] = t_work_length;
                 
-                workingPhases[i][j] = (real*) malloc(sizeof(real)*t_work_length*16);
+                workingPhases[i][j] = (real*) malloc(sizeof(real)*t_work_length*BLOCKSIZE*BLOCKSIZE);
                 workingIndexes[i][j] = (int*) malloc(sizeof(int)*t_work_length*2);
                 
                 
@@ -255,26 +253,25 @@ public:
                     Block first= phasesTemp[i][j]->front();
                     phasesTemp[i][j]->pop_front();
                     
-                    workingPhases[i][j][16*m] = first.a0;
-                    workingPhases[i][j][16*m+1] = first.a1;
-                    workingPhases[i][j][16*m+2] = first.a2;
-                    workingPhases[i][j][16*m+3] = first.a3;
-                    workingPhases[i][j][16*m+4] = first.a4;
-                    workingPhases[i][j][16*m+5] = first.a5;
-                    workingPhases[i][j][16*m+6] = first.a6;
-                    workingPhases[i][j][16*m+7] = first.a7;
-                    workingPhases[i][j][16*m+8] = first.a8;
-                    workingPhases[i][j][16*m+9] = first.a9;
-                    workingPhases[i][j][16*m+10] = first.aA;
-                    workingPhases[i][j][16*m+11] = first.aB;
-                    workingPhases[i][j][16*m+12] = first.aC;
-                    workingPhases[i][j][16*m+13] = first.aD;
-                    workingPhases[i][j][16*m+14] = first.aE;
-                    workingPhases[i][j][16*m+15] = first.aF;
+                    workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m] = first.a0;
+                    workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+1] = first.a1;
+                    workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+2] = first.a2;
+                    workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+3] = first.a3;
+                    workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+4] = first.a4;
+                    workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+5] = first.a5;
+                    workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+6] = first.a6;
+                    workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+7] = first.a7;
+                    workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+8] = first.a8;
+                    workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+9] = first.a9;
+                    workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+10] = first.aA;
+                    workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+11] = first.aB;
+                    workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+12] = first.aC;
+                    workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+13] = first.aD;
+                    workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+14] = first.aE;
+                    workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+15] = first.aF;
                     workingIndexes[i][j][2*m] = first.index_x;
                     workingIndexes[i][j][2*m+1] = first.index_y;
-                    //outfile1<<"Block sent : ("<<first.index_x<<", "<<first.index_y<<") ("<<i<<","<<j<<")"<<"\n";
-                    
+              
                     
                 }
                 
@@ -282,28 +279,26 @@ public:
             }
         }
 
-        //outfile1<<"\n";
-        //Must add a way to remove empty phases (happens a lot)
+    
         for(int i =0; i<phase_number; i++)
         {
-            //is the phase i Empty?
+           
             int count = 0;
             
             for(int thNb = 0; thNb<nbThreads; thNb++)
             {
-                count += work_lengths[i][thNb];//Count total number of work in the phase
+                count += work_lengths[i][thNb];
             }
             if(count>0)
             {
                 valid_phase_index.emplace_back(i);
             }
         }
-        //We now know what phase we just do and which one we should not do
-
+       
     }
     void generateBlocks3()
     {
-        //tfile.open("test.txt", std::ios::app);
+     
         phase_tab = (int*) malloc(sizeof(int)*nbThreads);
         phase_tab[0] = 0;
         if(nbThreads %2 == 0)
@@ -390,12 +385,8 @@ public:
 
             }
         }
-        
-        workingPhases = (real***) malloc(sizeof(real**)*phase_number);
-        workingIndexes = (int***)malloc(sizeof(int**)*phase_number);
-        
         QueueBlock*** phasesTemp = (QueueBlock***) malloc(sizeof(QueueBlock**) * phase_number);
-        threadBlockSize = (int) matrix->size() / (S_BLOCK_SIZE * nbThreads);
+        threadBlockSize = (int) matrix->size() / (BLOCKSIZE * nbThreads);
         int* phase_counter = (int*) malloc(sizeof(int)*phase_number);
         work_lengths = (int**) malloc(sizeof(int*)*phase_number);
         for(int i=0; i<phase_number;i++)
@@ -406,9 +397,7 @@ public:
         
         for(int i =0; i<phase_number; i++)
         {
-            workingPhases[i] = (real**) malloc(sizeof(real*) * nbThreads);
-            workingIndexes[i] = (int**) malloc(sizeof(int*) * nbThreads);
-            
+           
             phasesTemp[i] = (QueueBlock**) malloc(sizeof(QueueBlock*)*nbThreads);
             for(int j=0; j<nbThreads; j++)
             {
@@ -417,39 +406,47 @@ public:
         }
         
         int i =0;
-        while(true)//Fetching blocks, assigned them to a phase each
+        while(true)//Fetching blocks -> assignign each block to a phase and a thread
         {
             int indX, indY;
             SparMatSymBlk::Column* col = &matrix->column_[i];
             if(col->nbb_>0)
             {
-                //std::cout<<"Column number "<<matrix->colidx_[i]<<"->ind_YB : "<<(int) matrix->colidx_[i]/threadBlockSize<<"\n";
+
                 indY = matrix->colidx_[i]/threadBlockSize;
                 int indice_col = matrix->colidx_[i];
                 
                 for(int j=0; j<col->nbb_; j++)
                 {
                     int indice_ligne = col->inx_[j];
-                    //std::cout<<"Block position :"<<col->inx_[j]<<"-> ind_XB : "<<(int) col->inx_[j]/threadBlockSize<<"ind_YB:"<<indY<<"\n";
+
                     indX =col->inx_[j]/threadBlockSize;
                 
                 
 
                 
                     int phase =phase_tab[indX-indY];
-                   // std::cout<<"Chosen phase: "<<phase<<"\n";
-                    //phasesTemp[phase][phase_counter[phase]%nbThreads]->push_front(Tuple2( indice_ligne, indice_col,swap, &matrix->block(col->inx_[j],matrix->colidx_[i])));
                     Block data;
+                    #if BLOCKSIZE==4
                     Matrix44 matrix= col->blk_[j];
+                    #endif 
+                    #if BLOCKSIZE == 3
+                    Matrix33 matrix= col->blk_[j];
+                    #endif
+                    #if BLOCKSIZE ==2
+                    Matrix22 matrix= col->blk_[j];
+                    #endif
                     data.a0 = matrix.val[0x0];
                     data.a1 = matrix.val[0x1];
                     data.a2 = matrix.val[0x2];
                     data.a3 = matrix.val[0x3];
+                    #if BLOCKSIZE>=3
                     data.a4 = matrix.val[0x4];
                     data.a5 = matrix.val[0x5];
                     data.a6 = matrix.val[0x6];
                     data.a7 = matrix.val[0x7];
                     data.a8 = matrix.val[0x8];
+                    #if BLOCKSIZE >=4
                     data.a9 = matrix.val[0x9];
                     data.aA = matrix.val[0xA];
                     data.aB = matrix.val[0xB];
@@ -457,14 +454,13 @@ public:
                     data.aD = matrix.val[0xD];
                     data.aE = matrix.val[0xE];
                     data.aF = matrix.val[0xF];
+                    #endif 
+                    #endif 
+                    data.index_x = indice_ligne * BLOCKSIZE;
+                    data.index_y = indice_col * BLOCKSIZE;
                     
-                    data.index_x = indice_ligne * blocksize;
-                    data.index_y = indice_col * blocksize;
-                    
-                  
                     phasesTemp[phase][indX]->push_front(data);
-                  
-                    
+
                     phase_counter[phase]++;
                     
                 }
@@ -501,33 +497,35 @@ public:
             }
             else
             {
-                //std::cout<<"Phase:"<<i<<"Max is "<<maxCount*2*nbThreads<<"\n";
-                newPhases[i] = (real*) malloc(maxCount*16*nbThreads*sizeof(real));
+            
+                newPhases[i] = (real*) malloc(maxCount*BLOCKSIZE*BLOCKSIZE*nbThreads*sizeof(real));
                 newIndexes[i] = (int*) malloc(maxCount*2*nbThreads*sizeof(int));
                 for(int j=0; j<nbThreads;j++)
                 {
                     for(int m=0; m<work_lengths[i][j];m++)
                     {
                     Block block = phasesTemp[i][j]->front();
-                    //std::cout<<"Send block at "
                     phasesTemp[i][j]->pop_front();
-
-                    newPhases[i][16*(m*nbThreads+j)] = block.a0;
-                    newPhases[i][16*(m*nbThreads+j)+1] = block.a1;
-                    newPhases[i][16*(m*nbThreads+j)+2] = block.a2;
-                    newPhases[i][16*(m*nbThreads+j)+3] = block.a3;
-                    newPhases[i][16*(m*nbThreads+j)+4] = block.a4;
-                    newPhases[i][16*(m*nbThreads+j)+5] = block.a5;
-                    newPhases[i][16*(m*nbThreads+j)+6] = block.a6;
-                    newPhases[i][16*(m*nbThreads+j)+7] = block.a7;
-                    newPhases[i][16*(m*nbThreads+j)+8] = block.a8;
-                    newPhases[i][16*(m*nbThreads+j)+9] = block.a9;
-                    newPhases[i][16*(m*nbThreads+j)+10] = block.aA;
-                    newPhases[i][16*(m*nbThreads+j)+11] = block.aB;
-                    newPhases[i][16*(m*nbThreads+j)+12] = block.aC;
-                    newPhases[i][16*(m*nbThreads+j)+13] = block.aD;
-                    newPhases[i][16*(m*nbThreads+j)+14] = block.aE;
-                    newPhases[i][16*(m*nbThreads+j)+15] = block.aF;
+                    newPhases[i][BLOCKSIZE*BLOCKSIZE*(m*nbThreads+j)] = block.a0;
+                    newPhases[i][BLOCKSIZE*BLOCKSIZE*(m*nbThreads+j)+1] = block.a1;
+                    newPhases[i][BLOCKSIZE*BLOCKSIZE*(m*nbThreads+j)+2] = block.a2;
+                    newPhases[i][BLOCKSIZE*BLOCKSIZE*(m*nbThreads+j)+3] = block.a3;
+                    #if BLOCKSIZE>=3
+                    newPhases[i][BLOCKSIZE*BLOCKSIZE*(m*nbThreads+j)+4] = block.a4;
+                    newPhases[i][BLOCKSIZE*BLOCKSIZE*(m*nbThreads+j)+5] = block.a5;
+                    newPhases[i][BLOCKSIZE*BLOCKSIZE*(m*nbThreads+j)+6] = block.a6;
+                    newPhases[i][BLOCKSIZE*BLOCKSIZE*(m*nbThreads+j)+7] = block.a7;
+                    newPhases[i][BLOCKSIZE*BLOCKSIZE*(m*nbThreads+j)+8] = block.a8;
+                    #if BLOCKSIZE >=4
+                    newPhases[i][BLOCKSIZE*BLOCKSIZE*(m*nbThreads+j)+9] = block.a9;
+                    newPhases[i][BLOCKSIZE*BLOCKSIZE*(m*nbThreads+j)+10] = block.aA;
+                    newPhases[i][BLOCKSIZE*BLOCKSIZE*(m*nbThreads+j)+11] = block.aB;
+                    newPhases[i][BLOCKSIZE*BLOCKSIZE*(m*nbThreads+j)+12] = block.aC;
+                    newPhases[i][BLOCKSIZE*BLOCKSIZE*(m*nbThreads+j)+13] = block.aD;
+                    newPhases[i][BLOCKSIZE*BLOCKSIZE*(m*nbThreads+j)+14] = block.aE;
+                    newPhases[i][BLOCKSIZE*BLOCKSIZE*(m*nbThreads+j)+15] = block.aF;
+                    #endif 
+                    #endif 
                     newIndexes[i][2*(m*nbThreads+j)+0]= block.index_x;
                     newIndexes[i][2*(m*nbThreads+j)+1]= block.index_y;
                     }
@@ -535,9 +533,9 @@ public:
             }
              
         }
-        for(int i =0; i<phase_number; i++)
+        for(int i =0; i<phase_number; i++)//Ignoring empty phases, still creating them for block addition efficiency
         {
-            //is the phase i Empty?
+          
             int count = 0;
             
             for(int thNb = 0; thNb<nbThreads; thNb++)
@@ -590,7 +588,7 @@ public:
         
         for(int m = 0; m<n_work;m++)
         {
-            
+            barrier.arrive_and_wait();
             workThread3(barrier2, thread_nb);
             barrier.arrive_and_wait();
         }
@@ -614,11 +612,7 @@ public:
         const real* X2;
         real* Y1_;
         real* Y2_;
-        int time1 = 0;
-        int time2 = 0;
-        int nb1 = 0;
-        int nb2 = 0;
-        
+     
         while(j<valid_phase_index.size())
         {
             
@@ -633,7 +627,7 @@ public:
             
             for(int m = 0; m<work_nb; m++)
             {
-                auto start = std::chrono::high_resolution_clock::now();
+                
                 
                 int ix = index[m*2+0];
                 int iy = index[m*2+1];
@@ -641,22 +635,22 @@ public:
         
                
               
-                real a0 = work[16*m+0];
-                real a1 = work[16*m+1];
-                real a2 = work[16*m+2];
-                real a3 = work[16*m+3];
-                real a4 = work[16*m+4];
-                real a5 = work[16*m+5];
-                real a6 = work[16*m+6];
-                real a7 = work[16*m+7];
-                real a8 = work[16*m+8];
-                real a9 = work[16*m+9];
-                real aA = work[16*m+10];
-                real aB = work[16*m+11];
-                real aC = work[16*m+12];
-                real aD = work[16*m+13];
-                real aE = work[16*m+14];
-                real aF = work[16*m+15];
+                real a0 = work[BLOCKSIZE*BLOCKSIZE*m+0];
+                real a1 = work[BLOCKSIZE*BLOCKSIZE*m+1];
+                real a2 = work[BLOCKSIZE*BLOCKSIZE*m+2];
+                real a3 = work[BLOCKSIZE*BLOCKSIZE*m+3];
+                real a4 = work[BLOCKSIZE*BLOCKSIZE*m+4];
+                real a5 = work[BLOCKSIZE*BLOCKSIZE*m+5];
+                real a6 = work[BLOCKSIZE*BLOCKSIZE*m+6];
+                real a7 = work[BLOCKSIZE*BLOCKSIZE*m+7];
+                real a8 = work[BLOCKSIZE*BLOCKSIZE*m+8];
+                real a9 = work[BLOCKSIZE*BLOCKSIZE*m+9];
+                real aA = work[BLOCKSIZE*BLOCKSIZE*m+10];
+                real aB = work[BLOCKSIZE*BLOCKSIZE*m+11];
+                real aC = work[BLOCKSIZE*BLOCKSIZE*m+12];
+                real aD = work[BLOCKSIZE*BLOCKSIZE*m+13];
+                real aE = work[BLOCKSIZE*BLOCKSIZE*m+14];
+                real aF = work[BLOCKSIZE*BLOCKSIZE*m+15];
                 
                 if(ix-iy <= threadBlockSize || ix-iy==0)
                 {
@@ -680,6 +674,7 @@ public:
                 if(ix-iy !=0)
                 {
                     
+                    #if BLOCKSIZE==4
                     real y10 = 0;
                     real y11 = 0;
                     real y12=0;
@@ -787,7 +782,13 @@ public:
                     Y2_[2] += y22;
                     Y2_[3] += y23;
                     
-                 
+                    #endif 
+                    #if BLOCKSIZE==3
+                    //to_add
+                    #endif 
+                    #if BLOCKSIZE==2
+                    //to_add
+                    #endif 
                     
 
                   
@@ -797,8 +798,12 @@ public:
                     
                     Y2_[0] += a0 * X1[0] + a4 * X1[1] + a8 * X1[2] + aC * X1[3];
                     Y2_[1] += a1 * X1[0] + a5 * X1[1] + a9 * X1[2] + aD * X1[3];
+                    #if BLOCKSIZE >=3
                     Y2_[2] += a2 * X1[0] + a6 * X1[1] + aA * X1[2] + aE * X1[3];
+                    #if BLOCKSIZE >=4
                     Y2_[3] += a3 * X1[0] + a7 * X1[1] + aB * X1[2] + aF * X1[3];
+                    #endif
+                    #endif 
                   
                 }
             }
@@ -813,7 +818,7 @@ public:
     {
         
 
-        int active_work_count;
+
         int j = 0;
         
         real* work;
@@ -823,11 +828,8 @@ public:
         const real* X2;
         real* Y1_;
         real* Y2_;
-        int time1 = 0;
-        int time2 = 0;
-        int nb1 = 0;
-        int nb2 = 0;
-        //std::cout<<"Checkpoint1";
+    
+ 
         while(j<valid_phase_index.size())
         {
             
@@ -850,29 +852,27 @@ public:
                 int ix = index[(thNb+m*nbThreads)*2+0];
                 int iy = index[(thNb+m*nbThreads)*2+1];
               
-                
-                
-                
-                
-        
                
-               
-                real a0 = work[16*(m*nbThreads+thNb)+0];
-                real a1 = work[16*(m*nbThreads+thNb)+1];
-                real a2 = work[16*(m*nbThreads+thNb)+2];
-                real a3 = work[16*(m*nbThreads+thNb)+3];
-                real a4 = work[16*(m*nbThreads+thNb)+4];
-                real a5 = work[16*(m*nbThreads+thNb)+5];
-                real a6 = work[16*(m*nbThreads+thNb)+6];
-                real a7 = work[16*(m*nbThreads+thNb)+7];
-                real a8 = work[16*(m*nbThreads+thNb)+8];
-                real a9 = work[16*(m*nbThreads+thNb)+9];
-                real aA = work[16*(m*nbThreads+thNb)+10];
-                real aB = work[16*(m*nbThreads+thNb)+11];
-                real aC = work[16*(m*nbThreads+thNb)+12];
-                real aD = work[16*(m*nbThreads+thNb)+13];
-                real aE = work[16*(m*nbThreads+thNb)+14];
-                real aF = work[16*(m*nbThreads+thNb)+15];
+                real a0 = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+0];
+                real a1 = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+1];
+                real a2 = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+2];
+                real a3 = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+3];
+                #if BLOCKSIZE >=3
+                real a4 = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+4];
+                real a5 = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+5];
+                real a6 = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+6];
+                real a7 = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+7];
+                real a8 = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+8];
+                #if BLOCKSIZE >=4
+                real a9 = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+9];
+                real aA = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+10];
+                real aB = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+11];
+                real aC = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+12];
+                real aD = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+13];
+                real aE = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+14];
+                real aF = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+15];
+                #endif
+                #endif 
                 
                 if(ix-iy <= threadBlockSize || ix-iy==0)
                 {
@@ -884,7 +884,7 @@ public:
                 }
                 else
                 {
-                    //swap
+              
                     X1 = X  + iy;
                     X2 = X  + ix;
                     Y1_= Y2 + ix;
@@ -896,6 +896,7 @@ public:
                 if(ix-iy !=0)
                 {
                     
+                    #if BLOCKSIZE==4
                     real y10 = 0;
                     real y11 = 0;
                     real y12=0;
@@ -1003,7 +1004,13 @@ public:
                     Y2_[2] += y22;
                     Y2_[3] += y23;
                     
-                 
+                    #endif 
+                    #if BLOCKSIZE==3
+                    //to_add
+                    #endif 
+                    #if BLOCKSIZE==2
+                    //to_add
+                    #endif 
                     
 
                    
@@ -1012,8 +1019,12 @@ public:
                 {
                     Y2_[0] += a0 * X1[0] + a4 * X1[1] + a8 * X1[2] + aC * X1[3];
                     Y2_[1] += a1 * X1[0] + a5 * X1[1] + a9 * X1[2] + aD * X1[3];
+                    #if BLOCKSIZE >=3
                     Y2_[2] += a2 * X1[0] + a6 * X1[1] + aA * X1[2] + aE * X1[3];
+                    #if BLOCKSIZE >=4
                     Y2_[3] += a3 * X1[0] + a7 * X1[1] + aB * X1[2] + aF * X1[3];
+                    #endif 
+                    #endif
  
                 
                 }
@@ -1062,8 +1073,7 @@ public:
         catch (const std::exception &e)
         {
             std::cerr << "Exception occurred: " << e.what() << std::endl;
-            // Handle exception here if needed
-            
+        
         }
         for(int i=0;i<big_mat_size;i++)
         {
@@ -1086,8 +1096,7 @@ public:
        
 
         std::cout<<"[INFO] Time spent in generateBlocks "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
-        try
-        {
+        
             std::vector<std::thread> threads;
             std::barrier bar(nbThreads);
             std::barrier bar2(nbThreads);
@@ -1105,13 +1114,8 @@ public:
                 thread.join();
             }
          
-        }
-        catch (const std::exception &e)
-        {
-            std::cerr << "Exception occurred: " << e.what() << std::endl;
-            // Handle exception here if needed
-            
-        }
+        
+      
         for(int i=0;i<big_mat_size;i++)
         {
                 
