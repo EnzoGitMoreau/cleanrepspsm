@@ -205,7 +205,8 @@ public:
 					real value;
 					iss>>value;
 					real& value_in_matrix = matrix->element(i,j);
-					value_in_matrix = value;
+					value = (int) value;
+					value_in_matrix = (int) value;//temp
 					double errval = (*mtx_ptr)->get_val(i,j);
 					if(!errval)
 					{(*mtx_ptr)->set_val(value, i,j);
@@ -242,10 +243,11 @@ public:
 				
 				while (getline(inputFileV, ligne)) 
 				{ 
-					splitLine = splitStringByWhitespace(ligne);
+					
+					std::cout<<ligne<<"\n";
 					if(i==1)
 					{
-						int vector_size = std::stoi(splitLine[0]);
+						int vector_size = std::stoi(ligne);
 						if(vector_size != matrixSize)
 						{
 							numberofEntries = 0;
@@ -264,10 +266,11 @@ public:
 					}
 					if(i>1)
 					{
-						std::istringstream iss(splitLine[1]);
-						int ind = std::stoi(splitLine[0]);
-			
-						iss>>(*vector)[ind];
+						std::istringstream iss(ligne);
+						real value;
+						iss>>value;
+						value = (int) value;
+						(*vector)[i-2] = value;
 					
 						
 					}

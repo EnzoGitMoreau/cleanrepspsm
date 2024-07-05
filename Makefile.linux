@@ -6,14 +6,14 @@ OPENMP_DIR = /opt/Homebrew/Cellar/libomp/18.1.6
 
 CURRENT_DIR = $(shell pwd)
 EXEC = tests
-CXXFLAGS = -std=c++20  -fopenmp -O3  -g
-CCGLAGS = -std=c++20
+CXXFLAGS = -std=c++20  -fopenmp -O3 
+CCGLAGS = -std=c++20 -O3
 
 INCLUDES = -Iinclude/ `librsb-config --I_opts --cxxflags`
 	
        
 SRC_PATH = src
-LIB_DIRS = -L/home/co-more1/SPSMVecMul/bin/boost_1_84_0/stage/lib -L/usr/local/lib  
+LIB_DIRS = -L/usr/local/lib  
 LIBS = -lopenblas `librsb-config --static --ldflags --extra_libs`
 SRCS = $(SRC_PATH)/main.cpp \
  $(SRC_PATH)/sparmatsymblk.cc \

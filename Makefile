@@ -6,7 +6,7 @@ OPENMP_DIR = /opt/Homebrew/Cellar/libomp/18.1.6
 ARM_PER_LIB = /opt/arm/armpl_24.04_flang-new_clang_18
 CURRENT_DIR = $(shell pwd)
 EXEC = tests
-CXXFLAGS =  -Xclang -std=c++20 -fopenmp=libomp -O3 -flto -g
+CXXFLAGS =  -Xclang -std=c++20 -fopenmp=libomp -O3 -flto
 VARS = -DMATRIXMARKET -DMACOS
 
 
@@ -15,7 +15,8 @@ INCLUDES = -Iinclude/ \
 	-I$(OPENMP_DIR)/lib \
 	-I$(ARM_PER_LIB)/include
 	
-       
+LIBRSB =  $(shell echo $$HOME)/local/librsb/bin/
+$(shell export PATH=PATH:$(LIBRSB))
 SRC_PATH = src
 LIB_DIRS = -L$(OPENBLAS_DIR)/lib  -L/usr/local/lib -L$(OPENMP_DIR)/lib -L$(ARM_PER_LIB)/lib
 LIBS = -lopenblasp-r0.3.27  
@@ -28,8 +29,6 @@ OBJS = $(SRCS:.cpp=.o)
 OBJS := $(OBJS:.cc=.o)
 TARGET = $(EXEC)
 BLOCKSIZE = 4
-
-
 macOS:
 	$(MAKE) all VARS="-DMACOS -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW -DCYTOSIM_TEST -DBLOCKSIZE=$(BLOCKSIZE)"
 macOS-mmkt:
@@ -42,6 +41,8 @@ linux-mmkt:
 	$(MAKE) -f Makefile.linux VARS="-DMATRIXMARKET -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW -DCYTOSIM_TEST -DRSB -DBLOCKSIZE=$(BLOCKSIZE)"
 linux-cytosimMat:
 	$(MAKE) -f Makefile.linux VARS="-DCYTMAT -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW -DCYTOSIM_TEST -DRSB -DBLOCKSIZE=$(BLOCKSIZE)"
+linux-debug:
+	$(MAKE) -f Makefile.linux VARS="-DMATRIXMARKET -DCYTOSIM_ORIGINAL -DBLOCKSIZE=$(BLOCKSIZE)"
 unvalid:
 	$(MAKE) all VARS="-DCYTMAT -DMACOS -DMATRIXMARKET -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW -DCYTOSIM_TEST -DBLOCKSIZE=$(BLOCKSIZE)"
 all:

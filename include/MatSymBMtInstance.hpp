@@ -8,6 +8,7 @@
 #ifndef MatSymBMtInstance_hpp
 #define MatSymBMtInstance_hpp
 #ifndef BLOCKSIZE 
+#define FORMAT
 #define BLOCKSIZE 4
 #endif
 
@@ -597,9 +598,29 @@ public:
         
         
     } 
-    
-    void workThread2(std::barrier<>& barrier2, int thNb)
+    void work4(std::barrier<>& barrier,std::barrier<>& barrier2, int n_work)
     {
+       
+        _mutex.lock();
+        int thread_nb = thread_number();
+   
+        _mutex.unlock();
+        
+        for(int m = 0; m<n_work;m++)
+        {
+            barrier.arrive_and_wait();
+            workThread4(barrier2, thread_nb);
+            barrier.arrive_and_wait();
+        }
+   
+        
+        
+        
+    } 
+    
+
+    void workThread2(std::barrier<>& barrier2, int thNb)
+        {
         
 
         int active_work_count;
@@ -813,9 +834,455 @@ public:
             barrier2.arrive_and_wait();
             
         }
-}
+        }
+    void workThread4(std::barrier<>& barrier2, int thNb)
+        {
+            int active_work_count;
+            int j = 0;
+            
+            real* work;
+            int work_nb;
+            
+            const real* X1;
+            const real* X2;
+            real* Y1_;
+            int ix;
+            int iy;
+            int ix_p;
+            int iy_p;
+            
+            real* Y2_;
+        
+            while(j<valid_phase_index.size())
+            {
+                real acc_10 = 0;
+                real acc_11 = 0;
+                real acc_12 = 0;
+                real acc_13 = 0;
+                real acc_00 = 0;
+                real acc_01 = 0;
+                real acc_02 = 0;
+                real acc_03 = 0;
+                int k  = valid_phase_index[j];
+                work =  workingPhases[k][thNb];
+                
+                work_nb = work_lengths[k][thNb];
+                int* index = workingIndexes[k][thNb];
+                
+                if(work_nb >0)
+                {
+                    //Base case 
+                
+                    int ix_p = index[0];
+                    int iy_p = index[1];
+                    int ix = ix_p;
+                    int iy = iy_p;
+                    
+                    real a0 = work[0];
+                    real a1 = work[1];
+                    real a2 = work[2];
+                    real a3 = work[3];
+                    real a4 = work[4];
+                    real a5 = work[5];
+                    real a6 = work[6];
+                    real a7 = work[7];
+                    real a8 = work[8];
+                    real a9 = work[9];
+                    real aA = work[10];
+                    real aB = work[11];
+                    real aC = work[12];
+                    real aD = work[13];
+                    real aE = work[14];
+                    real aF = work[15];
+                    if(ix-iy <= threadBlockSize || ix-iy==0)
+                        {
+                            X1 = X  + iy;
+                            X2 = X  + ix;
+                            Y1_= Y1 + ix;
+                            Y2_= Y2 + iy;
+                        }
+                    else
+                        {
+                            X1 = X  + iy;
+                            X2 = X  + ix;
+                            Y1_= Y2 + ix;
+                            Y2_= Y1 + iy;
+                        }
+                    
+                    if(ix-iy !=0)
+                        {
+                            
+                            #if BLOCKSIZE==4
+                            real y10 = 0;
+                            real y11 = 0;
+                            real y12=0;
+                            real y13=0;
+                            real y20 = 0;
+                            real y21 = 0;
+                            real y22 = 0;
+                            real y23=0;
+                            real r10 = X1[0];
+                            real r11 = X1[1];
+                            real r12 = X1[2];
+                            real r13 = X1[3];
+                            real r20 = X2[0];
+                            real r21 = X2[1];
+                            real r22 = X2[2];
+                            real r23 = X2[3];
+                            {real & c = a0;
+                                
+                                y10 += c*r10;
+                                y20 += c*r20;
+                            }
+                            {
+                                real & c = a1;
+                                y11 += c * r10;
+                                y20 += c * r21;
+                            }
+                            {
+                                real & c = a4;
+                                y10 += c * r11;
+                                y21 += c * r20;
+                            }
+                            {
+                                real & c = a2;
+                                y12 += c * r10;
+                                y20 += c * r22;
+                            }
+                            {
+                                real& c = a8;
+                                y10 += c * r12;
+                                y22 += c* r20;
+                            }
+                            {
+                                real & c = a3;
+                                y13 += c * r10;
+                                y20 += c * r23;
+                            }
+                            {
+                                real & c  = aC;
+                                y10 += c *r13;
+                                y23 += c * r20;
+                            }
+                            {
+                                real & c = a5;
+                                y11+= c*r11;
+                                y21 += c *r21;
+                            }
+                            {
+                                real & c=  a6;
+                                y12 += c*r11;
+                                y21 += c*r22;
+                            }
+                            {
+                                real & c = a9;
+                                y11 += c *r12;
+                                y22 += c *r21;
+                            }
+                            {
+                                real &c  = a7;
+                                y13 += c *r11;
+                                y21 += c * r23;
+                            }
+                            {
+                                real & c  = aD;
+                                y11 +=c*r13;
+                                y23 += c *r21;
+                            }
+                            {
+                                real & c  = aA;
+                                y12 += c * r12;
+                                y22 += c* r22;
+                            }
+                            {
+                                real & c = aE;
+                                y12 += c * r13;
+                                y23 += c * r22;
+                            }
+                            {
+                                real & c = aB;
+                                y13 += c * r12;
+                                y22 += c *r23;
+                            }
+                            {
+                                real & c = aF;
+                                y13 += c * r13;
+                                y23 += c *r23;
+                            }
+                            
+                            
+                            Y1_[0] += y10;
+                            Y1_[1] += y11;
+                            Y1_[2] += y12;
+                            Y1_[3] += y13;
+                            Y2_[0] += y20;
+                            Y2_[1] += y21;
+                            Y2_[2] += y22;
+                            Y2_[3] += y23;
+                            
+                            #endif 
+                            #if BLOCKSIZE==3
+                            //to_add
+                            #endif 
+                            #if BLOCKSIZE==2
+                            //to_add
+                            #endif 
+                            
+
+                        
+                        }
+                    else
+                        {
+                            
+                            Y2_[0] += a0 * X1[0] + a4 * X1[1] + a8 * X1[2] + aC * X1[3];
+                            Y2_[1] += a1 * X1[0] + a5 * X1[1] + a9 * X1[2] + aD * X1[3];
+                            #if BLOCKSIZE >=3
+                            Y2_[2] += a2 * X1[0] + a6 * X1[1] + aA * X1[2] + aE * X1[3];
+                            #if BLOCKSIZE >=4
+                            Y2_[3] += a3 * X1[0] + a7 * X1[1] + aB * X1[2] + aF * X1[3];
+                            #endif
+                            #endif 
+                        
+                        }
+                    //End base case
+                
+                }
+                for(int m = 1; m<work_nb; m++)
+                {
+                    ix = index[m*2+0];
+                    iy = index[m*2+1];
+                    real a0 = work[BLOCKSIZE*BLOCKSIZE*m+0];
+                    real a1 = work[BLOCKSIZE*BLOCKSIZE*m+1];
+                    real a2 = work[BLOCKSIZE*BLOCKSIZE*m+2];
+                    real a3 = work[BLOCKSIZE*BLOCKSIZE*m+3];
+                    real a4 = work[BLOCKSIZE*BLOCKSIZE*m+4];
+                    real a5 = work[BLOCKSIZE*BLOCKSIZE*m+5];
+                    real a6 = work[BLOCKSIZE*BLOCKSIZE*m+6];
+                    real a7 = work[BLOCKSIZE*BLOCKSIZE*m+7];
+                    real a8 = work[BLOCKSIZE*BLOCKSIZE*m+8];
+                    real a9 = work[BLOCKSIZE*BLOCKSIZE*m+9];
+                    real aA = work[BLOCKSIZE*BLOCKSIZE*m+10];
+                    real aB = work[BLOCKSIZE*BLOCKSIZE*m+11];
+                    real aC = work[BLOCKSIZE*BLOCKSIZE*m+12];
+                    real aD = work[BLOCKSIZE*BLOCKSIZE*m+13];
+                    real aE = work[BLOCKSIZE*BLOCKSIZE*m+14];
+                    real aF = work[BLOCKSIZE*BLOCKSIZE*m+15];
+                    
+                    if(ix-iy <= threadBlockSize || ix-iy==0)
+                        {
+                            if(ix_p != ix)
+                            {
+                            X2 = X  + ix;
+                            Y1_[0] += acc_00;
+                            Y1_[1] += acc_01;
+                            Y1_[2] += acc_02;
+                            Y1_[3] += acc_03;
+                            acc_00 = 0;
+                            acc_01 = 0;
+                            acc_02 = 0;
+                            acc_03 = 0;
+                            Y1_= Y1 + ix;
+                            }
+                            if(iy_p != iy)
+                            {
+                            X1 = X  + iy;
+                            Y2_[0] += acc_10;
+                            Y2_[1] += acc_11;
+                            Y2_[2] += acc_12;
+                            Y2_[3] += acc_13;
+                            acc_10 = 0;
+                            acc_11 = 0;
+                            acc_12 = 0;
+                            acc_13 = 0;
+                            Y2_= Y2 + iy;
+                            }
+                        }
+                    else
+                        {
+                            
+                            if(ix_p != ix)
+                            {
+                            X2 = X  + ix;
+                            Y1_[0] += acc_00;
+                            Y1_[1] += acc_01;
+                            Y1_[2] += acc_02;
+                            Y1_[3] += acc_03;
+                            acc_00 = 0;
+                            acc_01 = 0;
+                            acc_02 = 0;
+                            acc_03 = 0;
+                            Y1_= Y2 + ix;
+                            }
+                            if(iy_p != iy)
+                            {
+                            X1 = X  + iy;
+                            Y2_[0] += acc_10;
+                            Y2_[1] += acc_11;
+                            Y2_[2] += acc_12;
+                            Y2_[3] += acc_13;
+                            acc_10 = 0;
+                            acc_11 = 0;
+                            acc_12 = 0;
+                            acc_13 = 0;
+                            Y2_= Y1 + iy;
+                            }
+                        }
+                    
+                    if(ix-iy !=0)
+                        {
+                            
+                            #if BLOCKSIZE==4
+                            real y10 = 0;
+                            real y11 = 0;
+                            real y12=0;
+                            real y13=0;
+                            real y20 = 0;
+                            real y21 = 0;
+                            real y22 = 0;
+                            real y23=0;
+                            real r10 = X1[0];
+                            real r11 = X1[1];
+                            real r12 = X1[2];
+                            real r13 = X1[3];
+                            real r20 = X2[0];
+                            real r21 = X2[1];
+                            real r22 = X2[2];
+                            real r23 = X2[3];
+                            {real & c = a0;
+                                
+                                y10 += c*r10;
+                                y20 += c*r20;
+                            }
+                            {
+                                real & c = a1;
+                                y11 += c * r10;
+                                y20 += c * r21;
+                            }
+                            {
+                                real & c = a4;
+                                y10 += c * r11;
+                                y21 += c * r20;
+                            }
+                            {
+                                real & c = a2;
+                                y12 += c * r10;
+                                y20 += c * r22;
+                            }
+                            {
+                                real& c = a8;
+                                y10 += c * r12;
+                                y22 += c* r20;
+                            }
+                            {
+                                real & c = a3;
+                                y13 += c * r10;
+                                y20 += c * r23;
+                            }
+                            {
+                                real & c  = aC;
+                                y10 += c *r13;
+                                y23 += c * r20;
+                            }
+                            {
+                                real & c = a5;
+                                y11+= c*r11;
+                                y21 += c *r21;
+                            }
+                            {
+                                real & c=  a6;
+                                y12 += c*r11;
+                                y21 += c*r22;
+                            }
+                            {
+                                real & c = a9;
+                                y11 += c *r12;
+                                y22 += c *r21;
+                            }
+                            {
+                                real &c  = a7;
+                                y13 += c *r11;
+                                y21 += c * r23;
+                            }
+                            {
+                                real & c  = aD;
+                                y11 +=c*r13;
+                                y23 += c *r21;
+                            }
+                            {
+                                real & c  = aA;
+                                y12 += c * r12;
+                                y22 += c* r22;
+                            }
+                            {
+                                real & c = aE;
+                                y12 += c * r13;
+                                y23 += c * r22;
+                            }
+                            {
+                                real & c = aB;
+                                y13 += c * r12;
+                                y22 += c *r23;
+                            }
+                            {
+                                real & c = aF;
+                                y13 += c * r13;
+                                y23 += c *r23;
+                            }
+                           
+                          
+                            
+                            acc_00 += y10;
+                            acc_01 += y11;
+                            acc_02 += y12;
+                            acc_03 += y13;
+                            acc_10 += y20;
+                            acc_11 += y21;
+                            acc_12 += y22;
+                            acc_13 += y23;
+                            
+                            #endif 
+                            #if BLOCKSIZE==3
+                            //to_add
+                            #endif 
+                            #if BLOCKSIZE==2
+                            //to_add
+                            #endif 
+                            
+
+                        
+                        }
+                    else
+                        {
+                            acc_10 += a0 * X1[0] + a4 * X1[1] + a8 * X1[2] + aC * X1[3];
+                            acc_11 += a1 * X1[0] + a5 * X1[1] + a9 * X1[2] + aD * X1[3];
+                            #if BLOCKSIZE >=3
+                            acc_12 += a2 * X1[0] + a6 * X1[1] + aA * X1[2] + aE * X1[3];
+                            #if BLOCKSIZE >=4
+                            acc_13 += a3 * X1[0] + a7 * X1[1] + aB * X1[2] + aF * X1[3];
+                            #endif
+                            #endif 
+                            
+                        
+                        }
+                    ix_p = ix;
+                    iy_p = iy;
+                }
+                
+                Y1_[0] += acc_00;
+                Y1_[1] += acc_01;
+                Y1_[2] += acc_02;
+                Y1_[3] += acc_03;
+                Y2_[0] += acc_10;
+                Y2_[1] += acc_11;
+                Y2_[2] += acc_12;
+                Y2_[3] += acc_13;
+                j++;
+                barrier2.arrive_and_wait();
+                
+            }
+        }
     void workThread3(std::barrier<>& barrier2, int thNb)
-    {
+        {
         
 
 
@@ -1036,10 +1503,10 @@ public:
             
             
         }
-}
+        }
    
     void vecMulAddnTimes2(const real*X_calc, real*Y, int n_time)
-    {
+        {
 
         X= X_calc;
         using milli = std::chrono::milliseconds;
@@ -1083,9 +1550,9 @@ public:
         }
         
     
-    }
+        }
     void vecMulAddnTimes3(const real*X_calc, real*Y, int n_time)
-    {
+        {
 
         X= X_calc;
         using milli = std::chrono::milliseconds;
@@ -1124,8 +1591,57 @@ public:
         }
         
     
-    }
+        }
+
+    void vecMulAddnTimes4(const real*X_calc, real*Y, int n_time)
+        {
+
+        X= X_calc;
+        using milli = std::chrono::milliseconds;
+        std::cout<<"[INFO]Starting MT calculation\n";
+        auto start = std::chrono::high_resolution_clock::now();
+        generateBlocks2();
+        auto stop = std::chrono::high_resolution_clock::now();
+       
+
+        std::cout<<"[INFO] Time spent in generateBlocks"<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
+        try
+        {
+            std::vector<std::thread> threads;
+            std::barrier bar(nbThreads);
+            std::barrier bar2(nbThreads);
+            for(int i=0;i<nbThreads; i++)
+            {
+                threads.emplace_back(&MatSymBMtInstance::work4, this, std::ref(bar), std::ref(bar2), n_time);
+            }
+            
+            
+            
+           
+            
+            for (auto& thread : threads)
+            {
+                thread.join();
+            }
+         
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << "Exception occurred: " << e.what() << std::endl;
+        
+        }
+        for(int i=0;i<big_mat_size;i++)
+        {
+                
+                Y[i]+= Y1[i]+Y2[i];
+                
+        }
+        
     
+        }
+
+
+
 
 };
 
