@@ -66,7 +66,7 @@ public:
     }
     void generateBlocks2()
     {
-        //tfile.open("test.txt", std::ios::app);
+        //tfile.open("debug.txt", std::ios::app);
         phase_tab = (int*) malloc(sizeof(int)*nbThreads);
         phase_tab[0] = 0;
         if(nbThreads %2 == 0)
@@ -178,7 +178,34 @@ public:
                 phasesTemp[i][j] = new QueueBlock();
             }
         }
-        
+        int** map_threads = (int**) malloc(nbThreads * sizeof(int*));
+                    for(int i = 0;i<nbThreads; i++)
+                    {
+                        map_threads[i] = (int*) malloc(nbThreads * sizeof(int));
+                    }
+
+                    for(int k =0; k<=nbThreads/2; k++)
+                    {
+                        for(int i =0; i<nbThreads;i++)
+                        {
+                            
+                        
+                            map_threads[(i+k)%nbThreads][i] = i;
+                            map_threads[i][(i+k)%nbThreads] = i;
+                      
+                        }
+                    }
+        #ifdef DEBUG
+            std::cout<<"[DEBUG]Printing wanted matrix\n";
+                        for(int i =0; i<nbThreads; i++)
+                    {
+                        for(int j=0; j<nbThreads; j++)
+                        {
+                            std::cout<<map_threads[i][j]<<" ";
+                        }
+                        std::cout<<"\n";
+                    }
+        #endif
         int i =0;
         while(true)//Fetching blocks, assigned them to a phase each
         {
@@ -215,10 +242,11 @@ public:
                     
                     data.index_x = indice_ligne * BLOCKSIZE;
                     data.index_y = indice_col * BLOCKSIZE;
+                   
                     
-                  
-                    phasesTemp[phase][indX]->push_front(data);
-                  
+                    
+                    phasesTemp[phase][map_threads[indX][indY]]->push_front(data);
+                    //tfile<<"Block ("<<data.index_x<<","<<data.index_y<<") assigned to th :"<<indX<<"phase: "<<phase<<"\n";
                     
                     phase_counter[phase]++;
                     
@@ -295,7 +323,7 @@ public:
                 valid_phase_index.emplace_back(i);
             }
         }
-       
+        //tfile.close();
     }
     void generateBlocks3()
     {
@@ -571,6 +599,14 @@ public:
             barrier.arrive_and_wait();
             workThread2(barrier2, thread_nb);
             barrier.arrive_and_wait();
+            //_mutex.lock();
+               // std::cout<<"Result after "<<m<<"mult\n";
+               // for(int i =0; i<big_mat_size;i++)
+                //{
+                 //   std::cout<<Y1[i] + Y2[i]<<" ";
+               // }
+                //std::cout<<"\n";
+            //_mutex.unlock();
         }
    
       
@@ -610,8 +646,17 @@ public:
         {
             barrier.arrive_and_wait();
             workThread4(barrier2, thread_nb);
+            if(thread_nb == 0)
+            {
+                for(int i=0; i<big_mat_size;i++)
+                {
+                    //std::cout<<Y1[i]+Y2[i]<<" ";
+                }
+                //std::cout<<"\n";
+            }
             barrier.arrive_and_wait();
         }
+        //std::cout<<"th "<<thread_nb<<"finished"<<"\n";
    
         
         
@@ -633,14 +678,17 @@ public:
         const real* X2;
         real* Y1_;
         real* Y2_;
-     
+        bool swap = false;
         while(j<valid_phase_index.size())
         {
             
-            
+            barrier2.arrive_and_wait();
 
             int k  = valid_phase_index[j];
-            work =  workingPhases[k][thNb];
+            
+            swap = thNb >= (nbThreads - k);
+           
+            work =  workingPhases[k][thNb]; 
             
             work_nb = work_lengths[k][thNb];
             int* index = workingIndexes[k][thNb];
@@ -673,7 +721,7 @@ public:
                 real aE = work[BLOCKSIZE*BLOCKSIZE*m+14];
                 real aF = work[BLOCKSIZE*BLOCKSIZE*m+15];
                 
-                if(ix-iy <= threadBlockSize || ix-iy==0)
+                if(swap)
                 {
                     X1 = X  + iy; //no swap
                     X2 = X  + ix;
@@ -683,7 +731,6 @@ public:
                 }
                 else
                 {
-                    //swap
                     X1 = X  + iy;
                     X2 = X  + ix;
                     Y1_= Y2 + ix;
@@ -793,7 +840,7 @@ public:
                         y23 += c *r23;
                     }
                     
-                    
+                    //_mutex.lock();
                     Y1_[0] += y10;
                     Y1_[1] += y11;
                     Y1_[2] += y12;
@@ -802,7 +849,7 @@ public:
                     Y2_[1] += y21;
                     Y2_[2] += y22;
                     Y2_[3] += y23;
-                    
+                    //_mutex.unlock();
                     #endif 
                     #if BLOCKSIZE==3
                     //to_add
@@ -817,15 +864,15 @@ public:
                 else
                 {
                     
-                    Y2_[0] += a0 * X1[0] + a4 * X1[1] + a8 * X1[2] + aC * X1[3];
-                    Y2_[1] += a1 * X1[0] + a5 * X1[1] + a9 * X1[2] + aD * X1[3];
+                    Y1_[0] += a0 * X1[0] + a4 * X1[1] + a8 * X1[2] + aC * X1[3];
+                    Y1_[1] += a1 * X1[0] + a5 * X1[1] + a9 * X1[2] + aD * X1[3];
                     #if BLOCKSIZE >=3
-                    Y2_[2] += a2 * X1[0] + a6 * X1[1] + aA * X1[2] + aE * X1[3];
+                    Y1_[2] += a2 * X1[0] + a6 * X1[1] + aA * X1[2] + aE * X1[3];
                     #if BLOCKSIZE >=4
-                    Y2_[3] += a3 * X1[0] + a7 * X1[1] + aB * X1[2] + aF * X1[3];
+                    Y1_[3] += a3 * X1[0] + a7 * X1[1] + aB * X1[2] + aF * X1[3];
                     #endif
                     #endif 
-                  
+                    
                 }
             }
             
@@ -839,10 +886,8 @@ public:
         {
             int active_work_count;
             int j = 0;
-            
             real* work;
             int work_nb;
-            
             const real* X1;
             const real* X2;
             real* Y1_;
@@ -850,11 +895,13 @@ public:
             int iy;
             int ix_p;
             int iy_p;
-            
+            real* Y_base;
+            real* Y_swap;
             real* Y2_;
-        
+            bool swap;
             while(j<valid_phase_index.size())
             {
+                barrier2.arrive_and_wait();
                 real acc_10 = 0;
                 real acc_11 = 0;
                 real acc_12 = 0;
@@ -865,19 +912,30 @@ public:
                 real acc_03 = 0;
                 int k  = valid_phase_index[j];
                 work =  workingPhases[k][thNb];
-                
+                swap = thNb >= (nbThreads - k);
                 work_nb = work_lengths[k][thNb];
                 int* index = workingIndexes[k][thNb];
-                
+                X1 = X;
+                X2 = X;
+                if(swap)
+                {
+                    Y_base = Y2;
+                    Y_swap = Y1;
+                 
+                }
+                else
+                {   
+                    Y_base = Y1;
+                    Y_swap = Y2;
+              
+                }
                 if(work_nb >0)
                 {
-                    //Base case 
-                
-                    int ix_p = index[0];
-                    int iy_p = index[1];
-                    int ix = ix_p;
-                    int iy = iy_p;
                     
+                    ix_p = index[0];
+                    iy_p = index[1];
+                    ix = ix_p;
+                    iy = iy_p;
                     real a0 = work[0];
                     real a1 = work[1];
                     real a2 = work[2];
@@ -894,21 +952,11 @@ public:
                     real aD = work[13];
                     real aE = work[14];
                     real aF = work[15];
-                    if(ix-iy <= threadBlockSize || ix-iy==0)
-                        {
-                            X1 = X  + iy;
-                            X2 = X  + ix;
-                            Y1_= Y1 + ix;
-                            Y2_= Y2 + iy;
-                        }
-                    else
-                        {
-                            X1 = X  + iy;
-                            X2 = X  + ix;
-                            Y1_= Y2 + ix;
-                            Y2_= Y1 + iy;
-                        }
-                    
+                    X1= X+iy;
+                    X2= X+ix;
+                    Y1_= Y_base + ix;
+                    Y2_= Y_swap + iy;
+                    //std::cout<<"thread : "<<thNb<<"starting with block"<<"("<<ix<<","<<iy<<")\n";
                     if(ix-iy !=0)
                         {
                             
@@ -1033,15 +1081,16 @@ public:
                         }
                     else
                         {
-                            
-                            Y2_[0] += a0 * X1[0] + a4 * X1[1] + a8 * X1[2] + aC * X1[3];
-                            Y2_[1] += a1 * X1[0] + a5 * X1[1] + a9 * X1[2] + aD * X1[3];
+                          
+                            Y1_[0] += a0 * X1[0] + a4 * X1[1] + a8 * X1[2] + aC * X1[3];
+                            Y1_[1] += a1 * X1[0] + a5 * X1[1] + a9 * X1[2] + aD * X1[3];
                             #if BLOCKSIZE >=3
-                            Y2_[2] += a2 * X1[0] + a6 * X1[1] + aA * X1[2] + aE * X1[3];
+                            Y1_[2] += a2 * X1[0] + a6 * X1[1] + aA * X1[2] + aE * X1[3];
                             #if BLOCKSIZE >=4
-                            Y2_[3] += a3 * X1[0] + a7 * X1[1] + aB * X1[2] + aF * X1[3];
+                            Y1_[3] += a3 * X1[0] + a7 * X1[1] + aB * X1[2] + aF * X1[3];
                             #endif
                             #endif 
+                        
                         
                         }
                     //End base case
@@ -1067,12 +1116,14 @@ public:
                     real aD = work[BLOCKSIZE*BLOCKSIZE*m+13];
                     real aE = work[BLOCKSIZE*BLOCKSIZE*m+14];
                     real aF = work[BLOCKSIZE*BLOCKSIZE*m+15];
-                    
-                    if(ix-iy <= threadBlockSize || ix-iy==0)
+                    //std::cout<<"thread : "<<thNb<<" continuing "<<"( "<<ix<<","<<iy<<" )\n";
+                    int delt_x = ix - ix_p;
+                    int delt_y = iy - iy_p;
+                    //std::cout<<"deltx: "<<delt_x<<" delt_y: "<<delt_y<<" \n";
+                    //std::cout<<"thread "<<thNb<<" acumulators : "<<acc_00<<" "<<acc_01<<" "<<acc_02<<" "<<acc_03<<" "<<acc_10<<" "<<acc_11<<" "<<acc_12<<" "<<acc_13<<"\n";
+                    if(delt_x !=0)
                         {
-                            if(ix_p != ix)
-                            {
-                            X2 = X  + ix;
+                            X2 = X + ix;
                             Y1_[0] += acc_00;
                             Y1_[1] += acc_01;
                             Y1_[2] += acc_02;
@@ -1081,41 +1132,13 @@ public:
                             acc_01 = 0;
                             acc_02 = 0;
                             acc_03 = 0;
-                            Y1_= Y1 + ix;
-                            }
-                            if(iy_p != iy)
-                            {
-                            X1 = X  + iy;
-                            Y2_[0] += acc_10;
-                            Y2_[1] += acc_11;
-                            Y2_[2] += acc_12;
-                            Y2_[3] += acc_13;
-                            acc_10 = 0;
-                            acc_11 = 0;
-                            acc_12 = 0;
-                            acc_13 = 0;
-                            Y2_= Y2 + iy;
-                            }
+                            Y1_= Y_base+ ix;
+                            //std::cout<<"Y1_ set to "<<ix<<"\n";
                         }
-                    else
+                    if(delt_y !=0)
                         {
-                            
-                            if(ix_p != ix)
-                            {
-                            X2 = X  + ix;
-                            Y1_[0] += acc_00;
-                            Y1_[1] += acc_01;
-                            Y1_[2] += acc_02;
-                            Y1_[3] += acc_03;
-                            acc_00 = 0;
-                            acc_01 = 0;
-                            acc_02 = 0;
-                            acc_03 = 0;
-                            Y1_= Y2 + ix;
-                            }
-                            if(iy_p != iy)
-                            {
-                            X1 = X  + iy;
+                           
+                            X1 = X + iy;
                             Y2_[0] += acc_10;
                             Y2_[1] += acc_11;
                             Y2_[2] += acc_12;
@@ -1124,10 +1147,11 @@ public:
                             acc_11 = 0;
                             acc_12 = 0;
                             acc_13 = 0;
-                            Y2_= Y1 + iy;
-                            }
+                            Y2_= Y_swap+iy;
+                            //std::cout<<"Y2_ set to "<<iy<<"\n";
                         }
-                    
+                        
+
                     if(ix-iy !=0)
                         {
                             
@@ -1239,7 +1263,7 @@ public:
                             acc_11 += y21;
                             acc_12 += y22;
                             acc_13 += y23;
-                            
+                            //std::cout<<"blathread "<<thNb<<" acumulators"<<acc_00<<" "<<acc_01<<" "<<acc_02<<" "<<acc_03<<" "<<acc_10<<" "<<acc_11<<" "<<acc_12<<" "<<acc_13<<"\n";
                             #endif 
                             #if BLOCKSIZE==3
                             //to_add
@@ -1249,8 +1273,9 @@ public:
                             #endif 
                             
 
-                        
+                       
                         }
+                    
                     else
                         {
                             acc_10 += a0 * X1[0] + a4 * X1[1] + a8 * X1[2] + aC * X1[3];
@@ -1259,15 +1284,21 @@ public:
                             acc_12 += a2 * X1[0] + a6 * X1[1] + aA * X1[2] + aE * X1[3];
                             #if BLOCKSIZE >=4
                             acc_13 += a3 * X1[0] + a7 * X1[1] + aB * X1[2] + aF * X1[3];
+                            //std::cout<<"kasthread "<<thNb<<" acumulators"<<acc_00<<" "<<acc_01<<" "<<acc_02<<" "<<acc_03<<" "<<acc_10<<" "<<acc_11<<" "<<acc_12<<" "<<acc_13<<"\n";
                             #endif
                             #endif 
                             
-                        
                         }
-                    ix_p = ix;
-                    iy_p = iy;
+                ix_p = ix;
+                iy_p = iy;
+                //std::cout<<"ix_p set to "<<ix_p<<"\n";
+                //std::cout<<"iy_p set to "<<iy_p<<"\n";
                 }
                 
+               
+                if(work_nb >=1)
+                {
+                //std::cout<<"thread "<<thNb<<" acumulators"<<acc_00<<" "<<acc_01<<" "<<acc_02<<" "<<acc_03<<" "<<acc_10<<" "<<acc_11<<" "<<acc_12<<" "<<acc_13<<"\n";
                 Y1_[0] += acc_00;
                 Y1_[1] += acc_01;
                 Y1_[2] += acc_02;
@@ -1276,14 +1307,13 @@ public:
                 Y2_[1] += acc_11;
                 Y2_[2] += acc_12;
                 Y2_[3] += acc_13;
-                j++;
+                }
                 barrier2.arrive_and_wait();
-                
+                j++;
             }
         }
     void workThread3(std::barrier<>& barrier2, int thNb)
         {
-        
 
 
         int j = 0;
@@ -1295,7 +1325,7 @@ public:
         const real* X2;
         real* Y1_;
         real* Y2_;
-    
+        bool swap = false;
  
         while(j<valid_phase_index.size())
         {
@@ -1309,7 +1339,7 @@ public:
             work_nb = work_lengths[k][thNb];
             int* index = newIndexes[k];
             
-           
+            swap = thNb >= (nbThreads - k);
             
             for(int m = 0; m<work_nb; m++)
             {
@@ -1341,7 +1371,7 @@ public:
                 #endif
                 #endif 
                 
-                if(ix-iy <= threadBlockSize || ix-iy==0)
+                if(swap)
                 {
                     X1 = X  + iy; //no swap
                     X2 = X  + ix;
@@ -1503,6 +1533,7 @@ public:
             
             
         }
+       
         }
    
     void vecMulAddnTimes2(const real*X_calc, real*Y, int n_time)
@@ -1646,5 +1677,4 @@ public:
 };
 
 #endif /* MatSymBMtInstance_hpp */
-
 

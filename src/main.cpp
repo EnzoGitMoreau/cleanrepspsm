@@ -7,7 +7,7 @@
 #include <stdlib.h>
 
 #include <iostream>
-
+//------------------------------Compilation checking------------------------------------------------
 #ifndef BLOCKSIZE
     #define UNVALID
     #define ERROR_MESSAGE "Please specify a block_size"
@@ -33,7 +33,7 @@
         #endif
     #endif
 #endif
-
+//------------------------------End compilation checking------------------------------------------------
 #ifdef MACOS
     #ifdef RSB
         #ifndef UNVALID
@@ -69,8 +69,6 @@
     #endif
     #ifdef ARMPL
         #include "armpl.h"
-    #endif
-    #ifdef ARMPL
         double* amd_matrix_vecmul(int size, int nTests, std::vector<std::pair<int, int>> pairs)
         {
             double* values = (double*) malloc(sizeof(double)*size*size);
@@ -123,19 +121,6 @@
             return y;
         }
     #endif 
-        void fillSMSB(int nbBlocks, int matsize,int blocksize, SparMatSymBlk* matrix)
-        {
-            
-            for(int i =0; i<matsize/blocksize;i++)
-            {
-            
-                for(int j=0; j<=i; j++)
-                {
-                    Matrix44* blockTest = new Matrix44(1,1,3,4,5,6,7,8,9,1,2,12,13,14,15,16);
-                    matrix->block(i,j).add_full(*blockTest);
-                }
-            }
-        }
     #ifdef RSB 
         void rsb_matrix_vecmul(double* Vec, double*res ,rsb::RsbMatrix<double>* mtx ,int nTests)
         {
@@ -170,18 +155,18 @@
 
     int main(int argc, char* argv[])
     {
-
+//------------------------------Base objects----------------------------------------------------------------
         using milli = std::chrono::milliseconds;
         auto start = std::chrono::high_resolution_clock::now();
         auto stop= std::chrono::high_resolution_clock::now();
         std::ofstream outfile1;
         SparMatSymBlk testMatrix = SparMatSymBlk();
-        
-
+        outfile1.open("res/res.out");//Output file for times
         int size = 0;
         int nb_threads;
         int nMatrix = 1;
         double block_percentage = 0.10;
+//------------------------------Parsing user parameters-----------------------------------------------------
         #ifndef MATRIXMARKET
             #ifndef CYTMAT
                 if (argc < 4) {
@@ -270,7 +255,9 @@
                 
             }
         #endif
+//------------------------------End parsing user parameters-------------------------------------------------
         omp_set_num_threads(nb_threads);
+//------------------------------Generating random Matrix if matrix not given------------------------------------------------
         #ifndef MATRIXMARKET
             std::vector<std::pair<int, int>> pairs = select_random_points(size/4,(int) size*size/16 * block_percentage*block_percentage);
             testMatrix.resize(size);
@@ -280,7 +267,7 @@
             
         #endif
         
-        
+//------------------------------Reading given matrix------------------------------------------------
         #ifdef MATRIXMARKET
             std::cout<<"Asked to read "<<inputPath<<" and to do "<<nMatrix<<" mult with "<<nb_threads<<" threads";
             #ifndef RSB 
@@ -294,7 +281,7 @@
             #endif
             size = matrixReader.problemSize();
         #endif 
-
+//------------------------------Reading given matrix + given vector------------------------------------------------
         #ifdef CYTMAT
             real* Vec;
             std::cout<<"Asked to read "<<matPath<<" and "<<vectorPath<< " and to do "<<nMatrix<<" mult with "<<nb_threads<<" threads";
@@ -310,7 +297,8 @@
             std::cout<<"\n[INFO]Finished reading matrix and vector";
             size = CytmatrixReader.problemSize();
         #endif
-    
+//------------------------------Final inits------------------------------------------------
+        
         real* Y_res = (real*)malloc(size * sizeof(real));//Y
         real* Y_true = (real*)malloc(size * sizeof(real));//Y_true to compare
         real* Y_rsb = (real*)malloc(size * sizeof(real));//Y_true to compare
@@ -324,96 +312,101 @@
         #endif
         for(int i=0; i<size;i++)
         {
-            Vec[i]=1;//Init
+            Vec[i]=i;//Init
             Y_res[i] = 0;
             Y_true[i] = 0;
             Y_rsb[i] = 0;
+        #ifdef CYTOSIM_TEST
+            Y_test[i] = 0;
+        #endif
         }
-       
         testMatrix.prepareForMultiply(1);
+        outfile1<<"ARMPL RSB CYTOSIM_ORIGINAL CYTOSIM_NEW CYTOSIM_TEST\n";//File Header
+
+//------------------------------Computing matrix multiplications for each algorithm------------------------------------------------
         std::cout<<"\n[STARTUP] OpenMP is enabled with " << omp_get_max_threads() <<" threads\n";
         #ifdef ARMPL
             real* y_arm = (real*)malloc(size * sizeof(real));//Y_true to compare
             std::cout<<"[STARTUP] ARM PL is working\n";
-            
-            outfile1.open("res/armpl.csv", std::ios::app);
             std::cout<<"[INFO] Starting ARMPL matrix-vector multiplications\n";
             start = std::chrono::high_resolution_clock::now();
             y_arm = amd_matrix_vecmul(size, nMatrix, pairs);
             stop= std::chrono::high_resolution_clock::now();
             std::cout<<"[INFO] ARMPL multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
-            outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
-            outfile1.close();
+            outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<" ";
         #endif 
+        #ifndef ARMPL
+        outfile1<<"-1 ";
+        #endif
         #ifdef RSB
             std::cout<<"[INFO] Starting libRsb matrix-vector multiplications\n";
-            outfile1.open("res/librsb.csv", std::ios::app);
             start = std::chrono::high_resolution_clock::now();
-            
             rsb_matrix_vecmul(Vec, Y_rsb, mtx, nMatrix);
             stop= std::chrono::high_resolution_clock::now();
-            outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
-            outfile1.close();
+            outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<" ";
             std::cout<<"[INFO] libRsb multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
         #endif 
+        #ifndef RSB
+            outfile1<<"-1 ";
+        #endif
         #ifdef CYTOSIM_ORIGINAL
             std::cout<<"[INFO] Starting Cytosim matrix-vector multiplications\n";
-            outfile1.open("res/standard.csv", std::ios::app);
             start = std::chrono::high_resolution_clock::now();
-            
-            for(int i =0; i<size;i++)
-            {
-                //Vec[i] = 0;
-                //std::cout<<Vec[i];
-            }
             for(int i=0; i<nMatrix;i++)
             {
                 testMatrix.vecMulAdd(Vec, Y_true);
             }
             stop= std::chrono::high_resolution_clock::now();
-            outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
-            outfile1.close();
+            outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<" ";
             std::cout<<"[INFO] Cytosim multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
         #endif 
-        #ifdef CYTOSIM_NEW
-            outfile1.open("res/newImpl.csv", std::ios::app);
-            std::cout<<"[INFO] Starting new-impl matrix-vector multiplications\n";
-            using milli = std::chrono::milliseconds;
-            start = std::chrono::high_resolution_clock::now();
-            testMatrix.vecMulMt2(nb_threads, Vec, Y_res,nMatrix);
-            stop = std::chrono::high_resolution_clock::now();
-            outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
-            outfile1.close();
-            std::cout<<"[INFO] new-impl multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
-        #endif
         #ifdef CYTOSIM_TEST
-            outfile1.open("res/newImpl.csv", std::ios::app);
             std::cout<<"[INFO] Starting new-impl-test matrix-vector multiplications\n";
             using milli = std::chrono::milliseconds;
             start = std::chrono::high_resolution_clock::now();
             testMatrix.vecMulMtTest(nb_threads, Vec, Y_test,nMatrix);
             stop = std::chrono::high_resolution_clock::now();
-            outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<",";
-            outfile1.close();
+            outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<" ";
             std::cout<<"[INFO] new-impl-test multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
         #endif
-        #ifndef CYTOSIM_TEST
-
+        #ifndef CYTOSIM_ORIGINAL
+            outfile1<<"-1 ";
         #endif
+        #ifdef CYTOSIM_NEW
+        
+            std::cout<<"[INFO] Starting new-impl matrix-vector multiplications\n";
+            using milli = std::chrono::milliseconds;
+            start = std::chrono::high_resolution_clock::now();
+            testMatrix.vecMulMt2(nb_threads, Vec, Y_res,nMatrix);
+            stop = std::chrono::high_resolution_clock::now();
+            outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<" ";
+            std::cout<<"[INFO] new-impl multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
+        #endif
+        #ifndef CYTOSIM_NEW
+            outfile1<<"-1 ";
+        #endif
+       
+        #ifndef CYTOSIM_TEST
+            outfile1<<"-1 ";
+        #endif
+        outfile1.close();
+//------------------------------Computing differences between algorithms results------------------------------------------------
         #ifdef CYTOSIM_TEST
             #ifdef RSB
             real* Y_diff_rsb = (real*) malloc(size*sizeof(real));
             real* Y_diff_rsb_true = (real*) malloc(size*sizeof(real));
-            real* Y_diff_test_true = (real*) malloc(size*sizeof(real));
-            real* Y_diff_res_true = (real*) malloc(size*sizeof(real));
-            real* Y_diff_res_test = (real*) malloc(size*sizeof(real));
+           
 
             int maxDiff_rsb = 0;
             int maxDiff_rsb_true = 0;
+            #endif 
+            real* Y_diff_test_true = (real*) malloc(size*sizeof(real));
+            real* Y_diff_res_true = (real*) malloc(size*sizeof(real));
+            real* Y_diff_res_test = (real*) malloc(size*sizeof(real));
             int maxDiff_test_true = 0;
             int maxDiff_res_true = 0;
             int maxDiff_res_test = 0;
-            #endif 
+    
             int nbDiff = 0; 
             double maxDiff =0;
             for(int i=0; i<size;i++)
@@ -438,32 +431,38 @@
                 Y_diff_res_test[i] = Y_test[i] - Y_res[i];
                 if(Y_diff_test_true[i]!=0)
                 {
-                    if(Y_diff_test_true[i]>maxDiff_test_true)
+                    if(abs(Y_diff_test_true[i])>maxDiff_test_true)
                     {
-                        maxDiff_test_true = Y_diff_test_true[i];
+                        maxDiff_test_true = abs(Y_diff_test_true[i]);
                     }
                     nbDiff++;
                 }
-                if(Y_diff_res_true[i]>maxDiff_res_true)
+                if(abs(Y_diff_res_true[i])>maxDiff_res_true)
                 {
-                    maxDiff_res_true = Y_diff_res_true[i];
+                    maxDiff_res_true = abs(Y_diff_res_true[i]);
                 }
-                if(Y_diff_res_test[i]>maxDiff_res_test)
+                if(abs(Y_diff_res_test[i])>maxDiff_res_test)
                 {
-                    maxDiff_res_test = Y_diff_res_test[i];
+                    maxDiff_res_test = abs(Y_diff_res_test[i]);
                 }
             
             }
-            if(nbDiff !=0)
+            if(true)
             {
-                if(maxDiff > 100*nMatrix)
+                //Old code, used to print differences 
+                if(true)
                 {
                 //std::cout<<"Resultat computation originelle\n";
                 for(int i =0; i< size; i++)
                 {
                     //std::cout<<Y_true[i]<<" ";
                 }
-                //std::cout<<"Resultat computation maison\n";
+                //std::cout<<"\nResultat computation new_impl\n";
+                for(int i =0; i< size; i++)
+                {
+                    //std::cout<<Y_res[i]<<" ";
+                }
+                 //std::cout<<"\nResultat computation new_impl-test\n";
                 for(int i =0; i< size; i++)
                 {
                     //std::cout<<Y_test[i]<<" ";
@@ -471,7 +470,7 @@
                 //std::cout<<"\n\nDifference of true_computation\n";
                 for(int i=0; i<size;i++)
                 {
-                    //std::cout<<Y_dif[i]<<" ";
+                    //std::cout<<Y_diff_res_test[i]<<" ";
                 }
 
                 }
@@ -498,14 +497,15 @@
         #endif  
     }
 #endif 
+//------------------------------If compilation is wrong ( bad parameters )-----------------------------------------------
 #ifdef UNVALID
     int main(int argc, char* argv[])
     {
         #ifdef ERROR_MESSAGE
-        std::cout<<ERROR_MESSAGE;
+            std::cout<<ERROR_MESSAGE;
         #endif
         #ifndef ERROR_MESSAGE
-        std::cout<<"Unvalid compilation: no reason found";
+            std::cout<<"Unvalid compilation: no reason found";
         #endif
     }
 #endif 
