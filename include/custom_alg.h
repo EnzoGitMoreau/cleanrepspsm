@@ -52,6 +52,9 @@ void add_block_to_pos_std(SparMatSymBlk* matrix, std::vector<std::pair<int, int>
         #if BLOCKSIZE == 3 
         Matrix33* block= new Matrix33(1,2/4.0,3/4.0,4/4.0,1/4.0,2/4.0,3/4.0,4/4,1/4.0);
         #endif
+        #if BLOCKSIZE ==2 
+        Matrix22* block= new Matrix22(1,2/4.0,3/4.0,4/4.0);
+        #endif
 		matrix->block(row,col).add_full(*block);
     }
 
@@ -70,6 +73,9 @@ void add_block_to_pos_rsb(rsb::RsbMatrix<double>** mtx_ptr, SparMatSymBlk* matri
         #endif 
         #if BLOCKSIZE == 3 
         Matrix33* block= new Matrix33(1,2,3,4,5,6,7,8,9);//to change
+        #endif
+        #if BLOCKSIZE ==2 
+        Matrix22* block= new Matrix22(1,2/4.0,3/4.0,4/4.0);
         #endif
 		matrix->block(row,col).add_full(*block);
         for(size_t m = 0; m<BLOCKSIZE; m++)
