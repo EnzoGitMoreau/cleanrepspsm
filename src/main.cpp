@@ -7,6 +7,7 @@
 #include <stdlib.h>
 
 #include <iostream>
+#include "tests_macro.hpp"
 //------------------------------Compilation checking------------------------------------------------
 #ifndef BLOCKSIZE
     #define UNVALID
@@ -33,6 +34,7 @@
         #endif
     #endif
 #endif
+
 //------------------------------End compilation checking------------------------------------------------
 #ifdef MACOS
     #ifdef RSB
@@ -157,8 +159,8 @@
     {
 //------------------------------Base objects----------------------------------------------------------------
         using milli = std::chrono::milliseconds;
-        auto start = std::chrono::high_resolution_clock::now();
-        auto stop= std::chrono::high_resolution_clock::now();
+        auto start = CLOCK
+        auto stop= CLOCK
         std::ofstream outfile1;
         SparMatSymBlk testMatrix = SparMatSymBlk();
         outfile1.open("res/res.out");//Output file for times
@@ -169,30 +171,27 @@
 //------------------------------Parsing user parameters-----------------------------------------------------
         #ifndef MATRIXMARKET
             #ifndef CYTMAT
-                if (argc < 4) {
-                    std::cerr << "Usage: tests nb_threads matSize" << std::endl;
-                    
-                    return 1;
+                if (argc < 4)
+                    {
+                        VLOGe("Usage: tests nb_threads matSize");
+                        return 1;
                     }
-                    else
+                else
                 {
                     try
                     {
                         size = std::stoi(argv[2]);
                         nb_threads = std::stoi(argv[1]); 
-
-                        
                         nMatrix = std::stoi(argv[3]);
                     }
                     catch(std::exception e)
                     {
-                        std::cerr << "Usage: tests nb_threads matSize nMatrix [block_percentage]" << std::endl;
+                        VLOGe("Usage: tests nb_threads matSize nMatrix [block_percentage]");
                         return 1;
                     }
-                    if(size%(nb_threads*4)!= 0)
+                    if(size%(nb_threads*BLOCKSIZE)!= 0)
                     {
-                        size = (int)(size / (4*nb_threads)) *4*nb_threads;
-                    
+                        size = (int)(size / (BLOCKSIZE*nb_threads)) *BLOCKSIZE*nb_threads;
                     }
                     if(argc >=5)
                     {
@@ -202,7 +201,7 @@
                     }
                     catch(std::exception e)
                     {
-                        std::cerr << "block percentage not recognized as a double: usage x.f";
+                        VLOGe("block percentage not recognized as a double: usage x.f");
                         return 1;
                     }
                     }
@@ -213,7 +212,7 @@
             std::string inputPath;
             if(argc < 4)
             {
-                std::cerr << "Usage tests nbThreads nbMult matrixPath";
+                VLOGe("Usage tests nbThreads nbMult matrixPath");
                 return 1;
             }
             else
@@ -226,7 +225,8 @@
                 }
                 catch(const std::exception& e)
                 {
-                    std::cerr << e.what() << '\n';
+                    VLOGe(e.what());
+                    VLOGe("\n");
                 }
                 
             }
@@ -236,7 +236,7 @@
             std::string vectorPath;
             if(argc < 5)
             {
-                std::cerr << "Usage tests nbThreads nbMult matrixPath vectorPath";
+                VLOGe("Usage tests nbThreads nbMult matrixPath vectorPath");
                 return 1;
             }
             else
@@ -250,7 +250,8 @@
                 }
                 catch(const std::exception& e)
                 {
-                    std::cerr << e.what() << '\n';
+                    VLOGe(e.what());
+                    VLOGe("\n");
                 }
                 
             }
@@ -272,12 +273,14 @@
                 add_block_to_pos_rsb(&mtx, &testMatrix, pairs, size);
             #endif 
             #endif 
-            std::cout<<"Constructed matrix of size "<<size<<" with "<<(int) size*size/16 * block_percentage*block_percentage <<" blocks of size 4, preparing to do "<<nMatrix<<" multiplications";
+            VLOG("Constructed matrix of size "+CONV(size)<<" with "+CONV((size*block_percentage/BLOCKSIZE)*(size*block_percentage/BLOCKSIZE))+" blocks of size "+CONV(BLOCKSIZE));
+            VLOG("Preparing to do"+CONV(nMatrix)+" multiplications");
+
         #endif
         
 //------------------------------Reading given matrix------------------------------------------------
         #ifdef MATRIXMARKET
-            std::cout<<"Asked to read "<<inputPath<<" and to do "<<nMatrix<<" mult with "<<nb_threads<<" threads";
+            VLOG("Asked to read "+CONV(inputPath)+" and to do "+CONV(nMatrix)+" mult with "+CONV(nb_threads)+" threads");
             #ifndef RSB 
                 MatrixReader matrixReader(inputPath, &testMatrix,nb_threads);
             #endif 
@@ -292,7 +295,7 @@
 //------------------------------Reading given matrix + given vector------------------------------------------------
         #ifdef CYTMAT
             real* Vec;
-            std::cout<<"Asked to read "<<matPath<<" and "<<vectorPath<< " and to do "<<nMatrix<<" mult with "<<nb_threads<<" threads";
+            VLOG("Asked to read "+CONV(matPath)+" and "+CONV(vectorPath)+ " and to do "+CONV(nMatrix)+" mult with "+CONV(nb_threads)+" threads");
             #ifndef RSB 
                 CytMatrixReader CytmatrixReader(matPath,vectorPath, &testMatrix,&Vec,nb_threads);
             #endif 
@@ -302,7 +305,7 @@
             
             CytMatrixReader CytmatrixReader(matPath, vectorPath, &testMatrix,&mtx, &Vec, nb_threads);
             #endif
-            std::cout<<"\n[INFO]Finished reading matrix and vector";
+            VLOG("Finished reading matrix and vector");
             size = CytmatrixReader.problemSize();
         #endif
 //------------------------------Final inits------------------------------------------------
@@ -332,63 +335,61 @@
         outfile1<<"ARMPL RSB CYTOSIM_ORIGINAL CYTOSIM_NEW CYTOSIM_TEST\n";//File Header
 
 //------------------------------Computing matrix multiplications for each algorithm------------------------------------------------
-        std::cout<<"\n[STARTUP] OpenMP is enabled with " << omp_get_max_threads() <<" threads\n";
+        VLOG("OpenMP is enabled with "+CONV(omp_get_max_threads())+" threads");
         #ifdef ARMPL
             real* y_arm = (real*)malloc(size * sizeof(real));//Y_true to compare
-            std::cout<<"[STARTUP] ARM PL is working\n";
-            std::cout<<"[INFO] Starting ARMPL matrix-vector multiplications\n";
-            start = std::chrono::high_resolution_clock::now();
+            VLOG("ARM PL is working");
+            VLOG("Starting ARMPL matrix-vector multiplications");
+            start = CLOCK
             y_arm = amd_matrix_vecmul(size, nMatrix, pairs);
-            stop= std::chrono::high_resolution_clock::now();
-            std::cout<<"[INFO] ARMPL multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
-            outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<" ";
+            stop= STOP_T
+            VLOG("ARMPL multiplications done in "+CONV(COUNT_T(start,stop))+" ms");
+            outfile1 << COUNT_T(start,stop)<<" ";
         #endif 
         #ifndef ARMPL
         outfile1<<"-1 ";
         #endif
         #ifdef RSB
-            std::cout<<"[INFO] Starting libRsb matrix-vector multiplications\n";
-            start = std::chrono::high_resolution_clock::now();
+            VLOG("Starting libRsb matrix-vector multiplications");
+            start = CLOCK
             rsb_matrix_vecmul(Vec, Y_rsb, mtx, nMatrix);
-            stop= std::chrono::high_resolution_clock::now();
-            outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<" ";
-            std::cout<<"[INFO] libRsb multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
+            stop= CLOCK
+            outfile1 << COUNT_T(start,stop)<<" ";
+            VLOG("libRsb multiplications done in "+CONV(COUNT_T(start,stop))+" ms");
         #endif 
         #ifndef RSB
             outfile1<<"-1 ";
         #endif
         #ifdef CYTOSIM_ORIGINAL
-            std::cout<<"[INFO] Starting Cytosim matrix-vector multiplications\n";
-            start = std::chrono::high_resolution_clock::now();
+            VLOG("Cytosim matrix-vector multiplications");
+            start = CLOCK
             for(int i=0; i<nMatrix;i++)
             {
                 testMatrix.vecMulAdd(Vec, Y_true);
             }
-            stop= std::chrono::high_resolution_clock::now();
-            outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<" ";
-            std::cout<<"[INFO] Cytosim multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
+            stop= CLOCK
+            outfile1 << COUNT_T(start,stop)<<" ";
+            VLOG("Cytosim multiplications done in "+CONV(COUNT_T(start,stop))+" ms");
         #endif 
         #ifdef CYTOSIM_TEST
-            std::cout<<"[INFO] Starting new-impl-test matrix-vector multiplications\n";
-            using milli = std::chrono::milliseconds;
-            start = std::chrono::high_resolution_clock::now();
+            VLOG("Starting new-impl-test matrix-vector multiplications");
+            start = CLOCK
             testMatrix.vecMulMtTest(nb_threads, Vec, Y_test,nMatrix);
-            stop = std::chrono::high_resolution_clock::now();
-            outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<" ";
-            std::cout<<"[INFO] new-impl-test multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
+            stop = CLOCK
+            outfile1 << COUNT_T(start,stop)<<" ";
+            VLOG("new-impl-test multiplications done in "+CONV(COUNT_T(start,stop))+" ms");
         #endif
         #ifndef CYTOSIM_ORIGINAL
             outfile1<<"-1 ";
         #endif
         #ifdef CYTOSIM_NEW
         
-            std::cout<<"[INFO] Starting new-impl matrix-vector multiplications\n";
-            using milli = std::chrono::milliseconds;
-            start = std::chrono::high_resolution_clock::now();
-            testMatrix.vecMulMt2(nb_threads, Vec, Y_res,nMatrix);
-            stop = std::chrono::high_resolution_clock::now();
-            outfile1 << std::chrono::duration_cast<milli>(stop - start).count()<<" ";
-            std::cout<<"[INFO] new-impl multiplications done in "<<std::chrono::duration_cast<milli>(stop - start).count()<<" ms\n";
+            VLOG("Starting new-impl matrix-vector multiplications");
+            start = CLOCK
+                testMatrix.vecMulMt2(nb_threads, Vec, Y_res,nMatrix);
+            stop = CLOCK
+            outfile1 << COUNT_T(start,stop)<<" ";
+            VLOG("new-impl multiplications done in "+CONV(COUNT_T(start,stop))+" ms");
         #endif
         #ifndef CYTOSIM_NEW
             outfile1<<"-1 ";
@@ -492,7 +493,7 @@
                 
               
                 diffile.close();
-                    std::cout<<"[INFO]Differences in computation\n";
+                    VLOG("Differences in computation");
                 #ifdef RSB 
                     std::cout<<"Diff rsb-test"<<maxDiff_rsb<<"\n";
                     std::cout<<"Diff rsb-true"<<maxDiff_rsb_true<<"\n";

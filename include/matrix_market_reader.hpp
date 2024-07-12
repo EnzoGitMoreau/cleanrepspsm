@@ -7,7 +7,7 @@
 #include <vector>
 #include "matrix44.h"
 #include "sparmatsymblk.h"
-
+#include "tests_macro.hpp"
 #ifndef BLOCKSIZE
 	#define BLOCKSIZE 4
 #endif
@@ -45,7 +45,7 @@ public:
 		std::ifstream inputFile(file_name);
 		if(!inputFile)
 		{
-			std::cout<<"\nCouldn't read "<<file_name<<"\n";	
+			VLOGe("Couldn't read "+CONV(file_name)+);	
 		}
 		else
 		{
@@ -63,9 +63,9 @@ public:
 				{
 					matrixSize = std::stoi(splitLine[0]);
 					numberofEntries = std::stoi(splitLine[2]);
-					std::cout<<"\n[INFO] Matrix Market's Matrix informations: \n";
-					std::cout << "[INFO] Matrix size: "<<matrixSize <<" Number of entries: "<<numberofEntries;
-					std::cout <<"\n[INFO] Reading and constructing Matrix";
+					VLOG("Matrix Market's Matrix informations:");
+					VLOG("Matrix size: "+CONV(matrixSize)+"Number of entries: "+CONV(numberofEntries));
+					VLOG("Reading and constructing Matrix");
 					if(matrixSize%(BLOCKSIZE*nb_threads) !=0)
 					{
 					matrix->resize((int(matrixSize/(BLOCKSIZE*nb_threads))+1)*(BLOCKSIZE*nb_threads));
@@ -103,7 +103,7 @@ public:
 		std::ifstream inputFile(file_name);
 		if(!inputFile)
 		{
-			std::cout<<"\nCouldn't read "<<file_name<<"\n";	
+			VLOG("Couldn't read "+CONV(file_name));	
 		}
 		else
 		{
@@ -121,9 +121,9 @@ public:
 				{
 					matrixSize = std::stoi(splitLine[0]);
 					numberofEntries = std::stoi(splitLine[2]);
-					std::cout<<"\n[INFO] Matrix Market's Matrix informations: \n";
-					std::cout << "[INFO] Matrix size: "<<matrixSize <<" Number of entries: "<<numberofEntries;
-					std::cout <<"\n[INFO] Reading and constructing Matrix";
+					VLOG("Matrix Market's Matrix informations");
+					VLOG("Matrix size: "+CONV(matrixSize) +"Number of entries: "+CONV(numberofEntries));
+					VLOG("Reading and constructing Matrix");
 					if(matrixSize%(BLOCKSIZE*nb_threads) !=0)
 					{
 					matrix->resize((int(matrixSize/(BLOCKSIZE*nb_threads))+1)*(BLOCKSIZE*nb_threads));
@@ -166,7 +166,7 @@ public:
 				i++;
 			}
 			(*mtx_ptr)->close();
-			std::cout<<"[INFO] Done reading input Matrix \n";
+			VLOG("Done reading input Matrix");
 		}
 	
 		

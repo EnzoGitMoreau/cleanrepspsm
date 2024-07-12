@@ -46,7 +46,7 @@ public:
 		std::ifstream inputFile(matrix_name);
 		if(!inputFile)
 		{
-			std::cout<<"\nCouldn't read "<<matrix_name<<"\n";	
+			VLOGe("Could not read "+matrix_name);	
 		}
 		else
 		{
@@ -64,9 +64,9 @@ public:
 				{
 					matrixSize = std::stoi(splitLine[0]);
 					numberofEntries = std::stoi(splitLine[2]);
-					std::cout<<"\n[INFO] Cytosim's Matrix informations: \n";
-					std::cout << "[INFO] Matrix size: "<<matrixSize <<" Number of entries: "<<numberofEntries;
-					std::cout <<"\n[INFO] Reading and constructing Matrix";
+					VLOG("Cytosim's Matrix informations:");
+					VLOG("Matrix size: "+CONV(matrixSize)+" Number of entries: "+CONV(numberofEntries));
+					VLOG("Reading and constructing Matrix");
 					if(matrixSize%(BLOCKSIZE*nb_threads) !=0)
 					{
 					matrix->resize((int(matrixSize/(BLOCKSIZE*nb_threads))+1)*(BLOCKSIZE*nb_threads));
@@ -101,7 +101,7 @@ public:
 		std::ifstream inputFileV(vector_name);
 		if(!inputFileV)
 		{
-			std::cout<<"\nCouldn't read "<<vector_name<<"\n";	
+			VLOGe("Could not read "+vector_name);	
 		}
 		else
 		{
@@ -122,15 +122,15 @@ public:
 					{
 						numberofEntries = 0;
 						matrixSize = 0;
-						std::cout<<"Error: Matrix size and vector size are different";
+						VLOGe("Error: Matrix size and vector size are different");
 					}
 					else
 					{
 					
 					numberofEntries = vector_size;
-					std::cout<<"\n[INFO] Cytosim's Vector informations: \n";
-					std::cout << "[INFO] Vector size: "<<vector_size<<" Number of entries: "<<numberofEntries;
-					std::cout <<"\n[INFO] Reading and constructing vector";
+					VLOG("Cytosim's Vector informations:");
+					VLOG("Vector size: "+CONV(vector_size)+" Number of entries: "+CONV(numberofEntries));
+					VLOG("Reading and constructing vector");
 					*vector = (real*) malloc(sizeof(real)*internMatSize);//Maybe
 					}
 				}
@@ -162,7 +162,7 @@ public:
 		std::ifstream inputFile(matrix_name);
 		if(!inputFile)
 		{
-			std::cout<<"\nCouldn't read "<<matrix_name<<"\n";	
+			VLOGe("Could not read "+matrix_name);	
 		}
 		else
 		{
@@ -180,9 +180,9 @@ public:
 				{
 					matrixSize = std::stoi(splitLine[0]);
 					numberofEntries = std::stoi(splitLine[2]);
-					std::cout<<"\n[INFO] Matrix Market's Matrix informations: \n";
-					std::cout << "[INFO] Matrix size: "<<matrixSize <<" Number of entries: "<<numberofEntries;
-					std::cout <<"\n[INFO] Reading and constructing Matrix";
+					VLOG("Cytosim's Matrix informations:");
+					VLOG("Matrix size: "+CONV(matrixSize)+" Number of entries: "+CONV(numberofEntries));
+					VLOG("Reading and constructing Matrix");
 					if(matrixSize%(BLOCKSIZE*nb_threads) !=0)
 					{
 					matrix->resize((int(matrixSize/(BLOCKSIZE*nb_threads))+1)*(BLOCKSIZE*nb_threads));
@@ -231,12 +231,12 @@ public:
 				i++;
 			}
 			(*mtx_ptr)->close();
-			std::cout<<"\n[INFO] Done reading input Matrix \n";
+			VLOG("Done reading input Matrix");
 			//Reading vector
 			std::ifstream inputFileV(vector_name);
 			if(!inputFileV)
 			{
-				std::cout<<"\nCouldn't read "<<vector_name<<"\n";	
+				VLOGe("Could not read "+vector_name);
 			}
 			else
 			{
@@ -258,15 +258,15 @@ public:
 						{
 							numberofEntries = 0;
 							matrixSize = 0;
-							std::cout<<"Error: Matrix size and vector size are different";
+							VLOGe("Error: Matrix size and vector size are different");
 						}
 						else
 						{
 						
 						numberofEntries = vector_size;
-						std::cout<<"\n[INFO] Cytosim's Vector informations: \n";
-						std::cout << "[INFO] Vector size: "<<vector_size<<" Number of entries: "<<numberofEntries;
-						std::cout <<"\n[INFO] Reading and constructing vector";
+						VLOG("Cytosim's Vector informations:");
+						VLOG("Vector size: "+CONV(vector_size)+" Number of entries: "+CONV(numberofEntries));
+						VLOG("Reading and constructing vector");
 						*vector = (real*) malloc(sizeof(real)*internMatSize);//Maybe
 						}
 					}
