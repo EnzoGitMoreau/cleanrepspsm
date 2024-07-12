@@ -262,9 +262,17 @@
             std::vector<std::pair<int, int>> pairs = select_random_points(size/4,(int) size*size/16 * block_percentage*block_percentage);
             testMatrix.resize(size);
             testMatrix.reset();
-            add_block_to_pos_std(&testMatrix, pairs, size);
+            #ifndef RSB
+                add_block_to_pos_std(&testMatrix, pairs, size);
+            #endif
+            #ifdef RSB
+            #ifndef CYTMAT
+                rsb::RsbLib rsblib;
+                rsb::RsbMatrix<double>* mtx;
+                add_block_to_pos_rsb(&mtx, &testMatrix, pairs, size);
+            #endif 
+            #endif 
             std::cout<<"Constructed matrix of size "<<size<<" with "<<(int) size*size/16 * block_percentage*block_percentage <<" blocks of size 4, preparing to do "<<nMatrix<<" multiplications";
-            
         #endif
         
 //------------------------------Reading given matrix------------------------------------------------
@@ -390,6 +398,8 @@
             outfile1<<"-1 ";
         #endif
         outfile1.close();
+        std::ofstream diffile;
+        diffile.open("diff.out");
 //------------------------------Computing differences between algorithms results------------------------------------------------
         #ifdef CYTOSIM_TEST
             #ifdef RSB
@@ -462,21 +472,26 @@
                 {
                     //std::cout<<Y_res[i]<<" ";
                 }
-                 //std::cout<<"\nResultat computation new_impl-test\n";
+                 diffile<<"\nResultat computation rsb\n";
                 for(int i =0; i< size; i++)
                 {
-                    //std::cout<<Y_test[i]<<" ";
+                    diffile<<Y_rsb[i]<<" ";
                 }
-                //std::cout<<"\n\nDifference of true_computation\n";
+                 diffile<<"\n\n\n\n\nResultat computation true\n";
+                for(int i =0; i< size; i++)
+                {
+                    diffile<<Y_true[i]<<" ";
+                }
+                diffile<<"\n\nDifference of rsb-test\n";
                 for(int i=0; i<size;i++)
                 {
-                    //std::cout<<Y_diff_res_test[i]<<" ";
+                    diffile<<Y_diff_test_true[i]<<" ";
                 }
 
                 }
                 
               
-                
+                diffile.close();
                     std::cout<<"[INFO]Differences in computation\n";
                 #ifdef RSB 
                     std::cout<<"Diff rsb-test"<<maxDiff_rsb<<"\n";

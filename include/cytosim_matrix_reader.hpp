@@ -205,8 +205,8 @@ public:
 					real value;
 					iss>>value;
 					real& value_in_matrix = matrix->element(i,j);
-					value = (int) value;
-					value_in_matrix = (int) value;//temp
+					value =  value;
+					value_in_matrix =value;//temp
 					double errval = (*mtx_ptr)->get_val(i,j);
 					if(!errval)
 					{(*mtx_ptr)->set_val(value, i,j);
@@ -214,6 +214,10 @@ public:
 						{
 						(*mtx_ptr)->set_val(value, j,i);
 						}}
+					else
+					{
+						std::cout<<"error";
+					}
 					
 					
 					
@@ -244,7 +248,7 @@ public:
 				while (getline(inputFileV, ligne)) 
 				{ 
 					
-					std::cout<<ligne<<"\n";
+					
 					if(i==1)
 					{
 						int vector_size = std::stoi(ligne);

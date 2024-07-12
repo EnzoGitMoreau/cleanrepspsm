@@ -2,6 +2,10 @@
 #include <vector>
 #include <algorithm>
 #include <utility>
+#ifdef RSB
+        #include <rsb.hpp>
+    #endif
+
 std::vector<std::pair<int, int>> select_random_points(int n, int k) {
     // Create a vector of pairs representing all points in the n x n grid
     std::vector<std::pair<int, int>> all_points;
@@ -42,8 +46,51 @@ void add_block_to_pos_std(SparMatSymBlk* matrix, std::vector<std::pair<int, int>
 	{ 
         int row = pairs[k].first;
         int col = pairs[k].second;
+        #if BLOCKSIZE == 4
         Matrix44* block= new Matrix44(1,2/4.0,3/4.0,4/4.0,1/4.0,2/4.0,3/4.0,4/4,1/4.0,2/4.0,3/4.0,4/4.0,1/4.0,2/4.0,3/4.0,4/4.0);
+        #endif 
+        #if BLOCKSIZE == 3 
+        Matrix33* block= new Matrix33(1,2/4.0,3/4.0,4/4.0,1/4.0,2/4.0,3/4.0,4/4,1/4.0);
+        #endif
 		matrix->block(row,col).add_full(*block);
     }
+
+}
+
+void add_block_to_pos_rsb(rsb::RsbMatrix<double>** mtx_ptr, SparMatSymBlk* matrix, std::vector<std::pair<int, int>> pairs, int lda)
+{
+    const rsb_coo_idx_t nrA { lda}, ncA { lda };
+	*mtx_ptr = new rsb::RsbMatrix<double>(nrA, ncA);
+	for (size_t k = 0; k < pairs.size(); k++) 
+	{ 
+        int row = pairs[k].first;
+        int col = pairs[k].second;
+        #if BLOCKSIZE == 4
+        Matrix44* block= new Matrix44(1,2/4.0,3/4.0,4/4.0,1/4.0,2/4.0,3/4.0,4/4,1/4.0,2/4.0,3/4.0,4/4.0,1/4.0,2/4.0,3/4.0,4/4.0);
+        #endif 
+        #if BLOCKSIZE == 3 
+        Matrix33* block= new Matrix33(1,2,3,4,5,6,7,8,9);//to change
+        #endif
+		matrix->block(row,col).add_full(*block);
+        for(size_t m = 0; m<BLOCKSIZE; m++)
+        {
+            for(size_t n=0; n<BLOCKSIZE; n++)
+            {
+                int i = row +m;
+                int j = col + n;
+            double errval = (*mtx_ptr)->get_val(i,j);
+            if(!errval)
+            {(*mtx_ptr)->set_val((m+n)/4.0, i,j);
+            if(i!=j)
+                {
+                (*mtx_ptr)->set_val((m+n)/4.0, j,i);
+                }}
+            }
+            
+        }
+        
+        
+    }
+    (*mtx_ptr)->close();
 
 }

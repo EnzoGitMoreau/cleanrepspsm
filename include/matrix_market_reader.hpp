@@ -144,7 +144,7 @@ public:
 					real value;
 					iss>>value;
 					real& value_in_matrix = matrix->element(i,j);
-					value_in_matrix = value;
+					value_in_matrix = (int) value;
 					double errval = (*mtx_ptr)->get_val(i,j);
 					if(!errval)
 					{(*mtx_ptr)->set_val(value, i,j);

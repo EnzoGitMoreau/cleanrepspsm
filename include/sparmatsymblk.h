@@ -2,8 +2,15 @@
 
 #ifndef SPARMATSYMBLK_H
 #define SPARMATSYMBLK_H
-#define DIM 4
-#define S_BLOCK_SIZE 4
+#ifdef BLOCKSIZE
+    #define DIM BLOCKSIZE 
+    #define S_BLOCK_SIZE BLOCKSIZE
+#endif 
+#ifndef BLOCKSIZE
+    #define DIM 4
+
+    #define S_BLOCK_SIZE 4
+#endif
 
 #include <cstdio>
 #include <iostream>
