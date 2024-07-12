@@ -231,7 +231,7 @@ public:
 				i++;
 			}
 			(*mtx_ptr)->close();
-			std::cout<<"[INFO] Done reading input Matrix \n";
+			std::cout<<"\n[INFO] Done reading input Matrix \n";
 			//Reading vector
 			std::ifstream inputFileV(vector_name);
 			if(!inputFileV)

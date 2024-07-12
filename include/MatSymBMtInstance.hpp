@@ -405,7 +405,7 @@ public:
                 real a6 = work[BLOCKSIZE*BLOCKSIZE*m+6];
                 real a7 = work[BLOCKSIZE*BLOCKSIZE*m+7];
                 real a8 = work[BLOCKSIZE*BLOCKSIZE*m+8];
-                #if BLOCKSIZE ==3 
+                #if BLOCKSIZE ==4
                 real a9 = work[BLOCKSIZE*BLOCKSIZE*m+9];
                 real aA = work[BLOCKSIZE*BLOCKSIZE*m+10];
                 real aB = work[BLOCKSIZE*BLOCKSIZE*m+11];
@@ -1103,12 +1103,7 @@ public:
 
                             #endif 
                             #if BLOCKSIZE==3
-                                real y10 = 0;
-                                real y11 = 0;
-                                real y12=  0;
-                                real y20 = 0;
-                                real y21 = 0;
-                                real y22 = 0;
+                               
                                 real r10 = X1[0];
                                 real r11 = X1[1];
                                 real r12 = X1[2];
@@ -1118,55 +1113,50 @@ public:
 
                                     {real & c = a0;
                                         
-                                        y10 += c*r10;
-                                        y20 += c*r20;
+                                        acc_00 += c*r10;
+                                        acc_10 += c*r20;
                                     }
                                     {
                                         real & c = a1;
-                                        y11 += c * r10;
-                                        y20 += c * r21;
+                                        acc_01 += c * r10;
+                                        acc_10 += c * r21;
                                     }
                                     {
                                         real & c = a3;
-                                        y10 += c * r11;
-                                        y21 += c * r20;
+                                        acc_00 += c * r11;
+                                        acc_11 += c * r20;
                                     }
                                     {
                                         real & c = a2;
-                                        y12 += c * r10;
-                                        y20 += c * r22;
+                                        acc_02 += c * r10;
+                                        acc_10 += c * r22;
                                     }
                                     {
                                         real& c = a6;
-                                        y10 += c * r12;
-                                        y22 += c* r20;
+                                        acc_00 += c * r12;
+                                        acc_12 += c* r20;
                                     }
                                     {
                                         real & c = a4;
-                                        y11 += c * r11;
-                                        y21 += c * r21;
+                                        acc_01 += c * r11;
+                                        acc_11 += c * r21;
                                     }
                                     {
                                         real & c = a7;
-                                        y11+= c*r12;
-                                        y22 += c *r21;
+                                        acc_01+= c*r12;
+                                        acc_12 += c *r21;
                                     }
                                     {
                                         real & c = a5;
-                                        y12 += c *r11;
-                                        y21 += c *r22;
+                                        acc_02 += c *r11;
+                                        acc_11 += c *r22;
                                     }
                                     {
                                         real &c  = a8;
-                                        y12 += c *r12;
-                                        y22 += c * r22;
+                                        acc_02 += c *r12;
+                                        acc_12 += c * r22;
                                     }
-                                acc_00 += y10;
-                                acc_01 += y11;
-                                acc_02 += y12;
-                                acc_10 += y20;
-                                acc_11 += y21;
-                                acc_12 += y22;
+                                
                                   
 
                             #endif 
