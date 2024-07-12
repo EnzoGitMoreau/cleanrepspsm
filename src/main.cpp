@@ -161,9 +161,9 @@
         using milli = std::chrono::milliseconds;
         auto start = CLOCK
         auto stop= CLOCK
-        std::ofstream outfile1;
+        OPEN_OUTFILE;
         SparMatSymBlk testMatrix = SparMatSymBlk();
-        outfile1.open("res/res.out");//Output file for times
+        
         int size = 0;
         int nb_threads;
         int nMatrix = 1;
@@ -321,6 +321,8 @@
         #ifdef CYTOSIM_TEST 
             real* Y_test = (real*)malloc(size * sizeof(real));//Y_diff that will store differences
         #endif
+
+
         for(int i=0; i<size;i++)
         {
             Vec[i]=i;//Init
@@ -330,9 +332,10 @@
         #ifdef CYTOSIM_TEST
             Y_test[i] = 0;
         #endif
+
         }
         testMatrix.prepareForMultiply(1);
-        outfile1<<"ARMPL RSB CYTOSIM_ORIGINAL CYTOSIM_NEW CYTOSIM_TEST\n";//File Header
+        
 
 //------------------------------Computing matrix multiplications for each algorithm------------------------------------------------
         VLOG("OpenMP is enabled with "+CONV(omp_get_max_threads())+" threads");
@@ -347,18 +350,18 @@
             outfile1 << COUNT_T(start,stop)<<" ";
         #endif 
         #ifndef ARMPL
-        outfile1<<"-1 ";
+        LOG_NULL;
         #endif
         #ifdef RSB
             VLOG("Starting libRsb matrix-vector multiplications");
             start = CLOCK
             rsb_matrix_vecmul(Vec, Y_rsb, mtx, nMatrix);
             stop= CLOCK
-            outfile1 << COUNT_T(start,stop)<<" ";
+            LOG_VALUE(start, stop);
             VLOG("libRsb multiplications done in "+CONV(COUNT_T(start,stop))+" ms");
         #endif 
         #ifndef RSB
-            outfile1<<"-1 ";
+            LOG_NULL;
         #endif
         #ifdef CYTOSIM_ORIGINAL
             VLOG("Cytosim matrix-vector multiplications");
@@ -368,7 +371,7 @@
                 testMatrix.vecMulAdd(Vec, Y_true);
             }
             stop= CLOCK
-            outfile1 << COUNT_T(start,stop)<<" ";
+            LOG_VALUE(start, stop);
             VLOG("Cytosim multiplications done in "+CONV(COUNT_T(start,stop))+" ms");
         #endif 
         #ifdef CYTOSIM_TEST
@@ -376,141 +379,45 @@
             start = CLOCK
             testMatrix.vecMulMtTest(nb_threads, Vec, Y_test,nMatrix);
             stop = CLOCK
-            outfile1 << COUNT_T(start,stop)<<" ";
+            LOG_VALUE(start, stop);
             VLOG("new-impl-test multiplications done in "+CONV(COUNT_T(start,stop))+" ms");
         #endif
         #ifndef CYTOSIM_ORIGINAL
-            outfile1<<"-1 ";
+            LOG_NULL;
         #endif
         #ifdef CYTOSIM_NEW
-        
             VLOG("Starting new-impl matrix-vector multiplications");
             start = CLOCK
                 testMatrix.vecMulMt2(nb_threads, Vec, Y_res,nMatrix);
             stop = CLOCK
-            outfile1 << COUNT_T(start,stop)<<" ";
+            LOG_VALUE(start, stop);
             VLOG("new-impl multiplications done in "+CONV(COUNT_T(start,stop))+" ms");
         #endif
         #ifndef CYTOSIM_NEW
-            outfile1<<"-1 ";
+            LOG_NULL;
         #endif
        
-        #ifndef CYTOSIM_TEST
-            outfile1<<"-1 ";
-        #endif
-        outfile1.close();
-        std::ofstream diffile;
-        diffile.open("diff.out");
+        CLOSE_OUTFILE;
+        
 //------------------------------Computing differences between algorithms results------------------------------------------------
-        #ifdef CYTOSIM_TEST
-            #ifdef RSB
-            real* Y_diff_rsb = (real*) malloc(size*sizeof(real));
-            real* Y_diff_rsb_true = (real*) malloc(size*sizeof(real));
-           
-
-            int maxDiff_rsb = 0;
-            int maxDiff_rsb_true = 0;
-            #endif 
-            real* Y_diff_test_true = (real*) malloc(size*sizeof(real));
-            real* Y_diff_res_true = (real*) malloc(size*sizeof(real));
-            real* Y_diff_res_test = (real*) malloc(size*sizeof(real));
-            int maxDiff_test_true = 0;
-            int maxDiff_res_true = 0;
-            int maxDiff_res_test = 0;
-    
-            int nbDiff = 0; 
-            double maxDiff =0;
-            for(int i=0; i<size;i++)
-            {
-                #ifdef RSB
-                Y_diff_rsb[i] = Y_rsb[i] -Y_test[i];
-                Y_diff_rsb_true[i] = Y_rsb[i] -Y_true[i];
-                
-                if(Y_diff_rsb[i]>maxDiff_rsb)
-                {
-                    maxDiff_rsb = Y_diff_rsb[i];
-                    
-                    
-                }
-                if(Y_diff_rsb_true[i]>maxDiff_rsb_true)
-                {
-                    maxDiff_rsb_true = Y_diff_rsb_true[i];
-                }
-                #endif
-                Y_diff_test_true[i] = Y_test[i] - Y_true[i];
-                Y_diff_res_true[i] = Y_res[i] - Y_true[i];
-                Y_diff_res_test[i] = Y_test[i] - Y_res[i];
-                if(Y_diff_test_true[i]!=0)
-                {
-                    if(abs(Y_diff_test_true[i])>maxDiff_test_true)
-                    {
-                        maxDiff_test_true = abs(Y_diff_test_true[i]);
-                    }
-                    nbDiff++;
-                }
-                if(abs(Y_diff_res_true[i])>maxDiff_res_true)
-                {
-                    maxDiff_res_true = abs(Y_diff_res_true[i]);
-                }
-                if(abs(Y_diff_res_test[i])>maxDiff_res_test)
-                {
-                    maxDiff_res_test = abs(Y_diff_res_test[i]);
-                }
-            
-            }
-            if(true)
-            {
-                //Old code, used to print differences 
-                if(true)
-                {
-                //std::cout<<"Resultat computation originelle\n";
-                for(int i =0; i< size; i++)
-                {
-                    //std::cout<<Y_true[i]<<" ";
-                }
-                //std::cout<<"\nResultat computation new_impl\n";
-                for(int i =0; i< size; i++)
-                {
-                    //std::cout<<Y_res[i]<<" ";
-                }
-                 diffile<<"\nResultat computation res\n";
-                for(int i =0; i< size; i++)
-                {
-                    diffile<<Y_res[i]<<" ";
-                }
-                 diffile<<"\n\n\n\n\nResultat computation true\n";
-                for(int i =0; i< size; i++)
-                {
-                    diffile<<Y_true[i]<<" ";
-                }
-                diffile<<"\n\nDifference of rsb-test\n";
-                for(int i=0; i<size;i++)
-                {
-                    diffile<<Y_diff_test_true[i]<<" ";
-                }
-
-                }
-                
-              
-                diffile.close();
-                    VLOG("Differences in computation");
-                #ifdef RSB 
-                    std::cout<<"Diff rsb-test"<<maxDiff_rsb<<"\n";
-                    std::cout<<"Diff rsb-true"<<maxDiff_rsb_true<<"\n";
-                #endif
-                    std::cout<<"Diff test-true"<<maxDiff_test_true<<"\n";
-                    std::cout<<"Diff res-true"<<maxDiff_res_true<<"\n";
-                    std::cout<<"Diff test-res"<<maxDiff_res_test<<"\n";
-               
-                
-            }
-            else
-                {
-                        std::cout<<"\nComputation went well";
-                }
+        
+        
+        LOG_DIFF(Y_res, Y_true, size, "V1","Correct")
+        LOG_DIFF(Y_test, Y_true, size, "V2","Correct")
+        #ifdef RSB
+            LOG_DIFF(Y_rsb, Y_true, size, "RSB","Correct")
         #endif
-        #ifndef CYTOSIM_TEST
-        #endif  
+        DIFF_FILE
+        LOG_VEC(Y_res, size, "Version 1")
+        LOG_VEC(Y_true, size, "Cytosim")
+        LOG_VEC(Y_test, size, "Version 2")
+        #ifdef RSB 
+            LOG_VEC(Y_rsb, size, "LibRSB")
+        #endif
+        
+        DIFF_FILE_C
+        
+       
     }
 #endif 
 //------------------------------If compilation is wrong ( bad parameters )-----------------------------------------------
