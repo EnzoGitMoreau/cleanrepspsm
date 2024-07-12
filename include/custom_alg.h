@@ -30,11 +30,11 @@ void add_block_to_pos(double* values, std::vector<std::pair<int, int>> pairs, in
     for (size_t k = 0; k < pairs.size(); k++) { // Iterate over all the pairs in the vector
         int row = pairs[k].first;
         int col = pairs[k].second;
-        for (int i = 0; i < 4; i++) { // Iterate over the 4x4 block
-            for (int j = 0; j < 4; j++) 
+        for (int i = 0; i < BLOCKSIZE; i++) { // Iterate over the 4x4 block
+            for (int j = 0; j < BLOCKSIZE; j++) 
 			{
-                values[(row*4 + i) * lda + (col*4 + j)] = (i + j) / 4.0;
-				values[(col*4 + j) * lda + row*4+i] = (i + j) / 4.0;
+                values[(row*BLOCKSIZE + i) * lda + (col*BLOCKSIZE + j)] = (i + j) / 4.0;
+				values[(col*BLOCKSIZE + j) * lda + row*BLOCKSIZE+i] = (i + j) / 4.0;
             }
         }
     }
@@ -56,7 +56,7 @@ void add_block_to_pos_std(SparMatSymBlk* matrix, std::vector<std::pair<int, int>
     }
 
 }
-
+#ifdef RSB
 void add_block_to_pos_rsb(rsb::RsbMatrix<double>** mtx_ptr, SparMatSymBlk* matrix, std::vector<std::pair<int, int>> pairs, int lda)
 {
     const rsb_coo_idx_t nrA { lda}, ncA { lda };
@@ -94,3 +94,4 @@ void add_block_to_pos_rsb(rsb::RsbMatrix<double>** mtx_ptr, SparMatSymBlk* matri
     (*mtx_ptr)->close();
 
 }
+#endif

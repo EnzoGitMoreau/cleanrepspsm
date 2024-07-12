@@ -7,7 +7,9 @@
 #include <vector>
 #include "matrix44.h"
 #include "sparmatsymblk.h"
-
+#ifndef BLOCKSIZE
+	#define BLOCKSIZE 4
+#endif 
 #ifdef RSB
 #include <rsb.hpp>
 #endif
@@ -65,10 +67,10 @@ public:
 					std::cout<<"\n[INFO] Cytosim's Matrix informations: \n";
 					std::cout << "[INFO] Matrix size: "<<matrixSize <<" Number of entries: "<<numberofEntries;
 					std::cout <<"\n[INFO] Reading and constructing Matrix";
-					if(matrixSize%(4*nb_threads) !=0)
+					if(matrixSize%(BLOCKSIZE*nb_threads) !=0)
 					{
-					matrix->resize((int(matrixSize/(4*nb_threads))+1)*(4*nb_threads));
-					internMatSize = (int(matrixSize/(4*nb_threads))+1)*(4*nb_threads);
+					matrix->resize((int(matrixSize/(BLOCKSIZE*nb_threads))+1)*(BLOCKSIZE*nb_threads));
+					internMatSize = (int(matrixSize/(BLOCKSIZE*nb_threads))+1)*(BLOCKSIZE*nb_threads);
 					}
 					else
 					{
@@ -181,10 +183,10 @@ public:
 					std::cout<<"\n[INFO] Matrix Market's Matrix informations: \n";
 					std::cout << "[INFO] Matrix size: "<<matrixSize <<" Number of entries: "<<numberofEntries;
 					std::cout <<"\n[INFO] Reading and constructing Matrix";
-					if(matrixSize%(4*nb_threads) !=0)
+					if(matrixSize%(BLOCKSIZE*nb_threads) !=0)
 					{
-					matrix->resize((int(matrixSize/(4*nb_threads))+1)*(4*nb_threads));
-					internMatSize = (int(matrixSize/(4*nb_threads))+1)*(4*nb_threads);
+					matrix->resize((int(matrixSize/(BLOCKSIZE*nb_threads))+1)*(BLOCKSIZE*nb_threads));
+					internMatSize = (int(matrixSize/(BLOCKSIZE*nb_threads))+1)*(BLOCKSIZE*nb_threads);
 					}
 					else
 					{

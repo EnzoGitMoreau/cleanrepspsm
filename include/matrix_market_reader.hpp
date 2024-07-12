@@ -8,6 +8,9 @@
 #include "matrix44.h"
 #include "sparmatsymblk.h"
 
+#ifndef BLOCKSIZE
+	#define BLOCKSIZE 4
+#endif
 #ifdef RSB
 #include <rsb.hpp>
 #endif
@@ -63,9 +66,9 @@ public:
 					std::cout<<"\n[INFO] Matrix Market's Matrix informations: \n";
 					std::cout << "[INFO] Matrix size: "<<matrixSize <<" Number of entries: "<<numberofEntries;
 					std::cout <<"\n[INFO] Reading and constructing Matrix";
-					if(matrixSize%(4*nb_threads) !=0)
+					if(matrixSize%(BLOCKSIZE*nb_threads) !=0)
 					{
-					matrix->resize((int(matrixSize/(4*nb_threads))+1)*(4*nb_threads));
+					matrix->resize((int(matrixSize/(BLOCKSIZE*nb_threads))+1)*(BLOCKSIZE*nb_threads));
 
 					}
 					else
@@ -76,8 +79,8 @@ public:
 				if(i>1)
 				{
 					std::istringstream iss(splitLine[2]);
-					int i = std::stoi(splitLine[0]);
-					int j = std::stoi(splitLine[1]);
+					int i = std::stoi(splitLine[0]) -1;
+					int j = std::stoi(splitLine[1]) -1;
 					real value;
 					iss>>value;
 					real& value_in_matrix = matrix->element(i,j);
@@ -121,9 +124,9 @@ public:
 					std::cout<<"\n[INFO] Matrix Market's Matrix informations: \n";
 					std::cout << "[INFO] Matrix size: "<<matrixSize <<" Number of entries: "<<numberofEntries;
 					std::cout <<"\n[INFO] Reading and constructing Matrix";
-					if(matrixSize%(4*nb_threads) !=0)
+					if(matrixSize%(BLOCKSIZE*nb_threads) !=0)
 					{
-					matrix->resize((int(matrixSize/(4*nb_threads))+1)*(4*nb_threads));
+					matrix->resize((int(matrixSize/(BLOCKSIZE*nb_threads))+1)*(BLOCKSIZE*nb_threads));
 
 					}
 					else
@@ -139,8 +142,8 @@ public:
 				if(i>1)
 				{
 					std::istringstream iss(splitLine[2]);
-					int i = std::stoi(splitLine[0]);
-					int j = std::stoi(splitLine[1]);
+					int i = std::stoi(splitLine[0]) -1;
+					int j = std::stoi(splitLine[1]) -1;
 					real value;
 					iss>>value;
 					real& value_in_matrix = matrix->element(i,j);

@@ -196,10 +196,11 @@ public:
                         }
                         std::cout<<"\n";
                     }
-        #endif
+        #endif 
         int i =0;
         while(true)//Fetching blocks, assigned them to a phase each
         {
+            //std::cout<<"here\n";
             int indX, indY;
             SparMatSymBlk::Column* col = &matrix->column_[i];
             if(col->nbb_>0)
@@ -213,6 +214,7 @@ public:
                     indX =col->inx_[j]/threadBlockSize;
                     int phase =phase_tab[indX-indY];
                     Block data;
+                    //std::cout<<"there\n";
                     #if BLOCKSIZE ==4
                     Matrix44 matrix= col->blk_[j];
                     #endif
@@ -239,14 +241,20 @@ public:
                     #endif 
                     data.index_x = indice_ligne * BLOCKSIZE;
                     data.index_y = indice_col * BLOCKSIZE;
-                   
-                    
+                    //std::cout<<"la\n";
+                    //std::cout<<"Matrix Size:"<<big_mat_size<<"\n";
+                    //std::cout<<"threadblocksize:"<<threadBlockSize<<"\n";
+                    //std::cout<<"ix"<<data.index_x<<"iy:"<<data.index_y<<"\n";
+                    //std::cout<<"les donnees sont: "<<indX<<","<<indY<<"phase:"<<phase<<"\n";
+                    //std::cout<<"et puis:"<<map_threads[indX][indY]<<"\n";
                     
                     phasesTemp[phase][map_threads[indX][indY]]->push_front(data);
+                    //std::cout<<"j'ai reussi celui ci indX ne peut pas valoir 4 \n";
                     phase_counter[phase]++;
-                    
+                    //std::cout<<"et pq pas la\n";
                 }
             }
+            //std::cout<<"carrement ici\n";
             i = matrix->colidx_[i+1];
             if(i>=matrix->rsize_)
             {
@@ -287,6 +295,7 @@ public:
                     workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+6] = first.a6;
                     workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+7] = first.a7;
                     workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+8] = first.a8;
+                    #if BLOCKSIZE == 4
                     workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+9] = first.a9;
                     workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+10] = first.aA;
                     workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+11] = first.aB;
@@ -294,6 +303,7 @@ public:
                     workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+13] = first.aD;
                     workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+14] = first.aE;
                     workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+15] = first.aF;
+                    #endif 
                     workingIndexes[i][j][2*m] = first.index_x;
                     workingIndexes[i][j][2*m+1] = first.index_y;
               
@@ -384,14 +394,8 @@ public:
             
             for(int m = 0; m<work_nb; m++)
             {
-                
-                
                 int ix = index[m*2+0];
                 int iy = index[m*2+1];
-
-        
-               
-              
                 real a0 = work[BLOCKSIZE*BLOCKSIZE*m+0];
                 real a1 = work[BLOCKSIZE*BLOCKSIZE*m+1];
                 real a2 = work[BLOCKSIZE*BLOCKSIZE*m+2];
@@ -401,6 +405,7 @@ public:
                 real a6 = work[BLOCKSIZE*BLOCKSIZE*m+6];
                 real a7 = work[BLOCKSIZE*BLOCKSIZE*m+7];
                 real a8 = work[BLOCKSIZE*BLOCKSIZE*m+8];
+                #if BLOCKSIZE ==3 
                 real a9 = work[BLOCKSIZE*BLOCKSIZE*m+9];
                 real aA = work[BLOCKSIZE*BLOCKSIZE*m+10];
                 real aB = work[BLOCKSIZE*BLOCKSIZE*m+11];
@@ -408,7 +413,7 @@ public:
                 real aD = work[BLOCKSIZE*BLOCKSIZE*m+13];
                 real aE = work[BLOCKSIZE*BLOCKSIZE*m+14];
                 real aF = work[BLOCKSIZE*BLOCKSIZE*m+15];
-                
+                #endif 
                 if(swap)
                 {
                     X1 = X  + iy; //no swap
@@ -428,137 +433,201 @@ public:
                 }
                 
                 if(ix-iy !=0)
-                {
-                    
+                {  
                     #if BLOCKSIZE==4
+                        real y10 = 0;
+                        real y11 = 0;
+                        real y12=0;
+                        real y13=0;
+                        real y20 = 0;
+                        real y21 = 0;
+                        real y22 = 0;
+                        real y23=0;
+                        real r10 = X1[0];
+                        real r11 = X1[1];
+                        real r12 = X1[2];
+                        real r13 = X1[3];
+                        real r20 = X2[0];
+                        real r21 = X2[1];
+                        real r22 = X2[2];
+                        real r23 = X2[3];
+                        {real & c = a0;
+                            
+                            y10 += c*r10;
+                            y20 += c*r20;
+                        }
+                        {
+                            real & c = a1;
+                            y11 += c * r10;
+                            y20 += c * r21;
+                        }
+                        {
+                            real & c = a4;
+                            y10 += c * r11;
+                            y21 += c * r20;
+                        }
+                        {
+                            real & c = a2;
+                            y12 += c * r10;
+                            y20 += c * r22;
+                        }
+                        {
+                            real& c = a8;
+                            y10 += c * r12;
+                            y22 += c* r20;
+                        }
+                        {
+                            real & c = a3;
+                            y13 += c * r10;
+                            y20 += c * r23;
+                        }
+                        {
+                            real & c  = aC;
+                            y10 += c *r13;
+                            y23 += c * r20;
+                        }
+                        {
+                            real & c = a5;
+                            y11+= c*r11;
+                            y21 += c *r21;
+                        }
+                        {
+                            real & c=  a6;
+                            y12 += c*r11;
+                            y21 += c*r22;
+                        }
+                        {
+                            real & c = a9;
+                            y11 += c *r12;
+                            y22 += c *r21;
+                        }
+                        {
+                            real &c  = a7;
+                            y13 += c *r11;
+                            y21 += c * r23;
+                        }
+                        {
+                            real & c  = aD;
+                            y11 +=c*r13;
+                            y23 += c *r21;
+                        }
+                        {
+                            real & c  = aA;
+                            y12 += c * r12;
+                            y22 += c* r22;
+                        }
+                        {
+                            real & c = aE;
+                            y12 += c * r13;
+                            y23 += c * r22;
+                        }
+                        {
+                            real & c = aB;
+                            y13 += c * r12;
+                            y22 += c *r23;
+                        }
+                        {
+                            real & c = aF;
+                            y13 += c * r13;
+                            y23 += c *r23;
+                        }
+                        
+                        //_mutex.lock();
+                        Y1_[0] += y10;
+                        Y1_[1] += y11;
+                        Y1_[2] += y12;
+                        Y1_[3] += y13;
+                        Y2_[0] += y20;
+                        Y2_[1] += y21;
+                        Y2_[2] += y22;
+                        Y2_[3] += y23;
+                        //_mutex.unlock();
+                    #endif 
+                    #if BLOCKSIZE==3
                     real y10 = 0;
                     real y11 = 0;
-                    real y12=0;
-                    real y13=0;
+                    real y12=  0;
                     real y20 = 0;
                     real y21 = 0;
                     real y22 = 0;
-                    real y23=0;
                     real r10 = X1[0];
                     real r11 = X1[1];
                     real r12 = X1[2];
-                    real r13 = X1[3];
                     real r20 = X2[0];
                     real r21 = X2[1];
                     real r22 = X2[2];
-                    real r23 = X2[3];
-                    {real & c = a0;
-                        
-                        y10 += c*r10;
-                        y20 += c*r20;
-                    }
-                    {
-                        real & c = a1;
-                        y11 += c * r10;
-                        y20 += c * r21;
-                    }
-                    {
-                        real & c = a4;
-                        y10 += c * r11;
-                        y21 += c * r20;
-                    }
-                    {
-                        real & c = a2;
-                        y12 += c * r10;
-                        y20 += c * r22;
-                    }
-                    {
-                        real& c = a8;
-                        y10 += c * r12;
-                        y22 += c* r20;
-                    }
-                    {
-                        real & c = a3;
-                        y13 += c * r10;
-                        y20 += c * r23;
-                    }
-                    {
-                        real & c  = aC;
-                        y10 += c *r13;
-                        y23 += c * r20;
-                    }
-                    {
-                        real & c = a5;
-                        y11+= c*r11;
-                        y21 += c *r21;
-                    }
-                    {
-                        real & c=  a6;
-                        y12 += c*r11;
-                        y21 += c*r22;
-                    }
-                    {
-                        real & c = a9;
-                        y11 += c *r12;
-                        y22 += c *r21;
-                    }
-                    {
-                        real &c  = a7;
-                        y13 += c *r11;
-                        y21 += c * r23;
-                    }
-                    {
-                        real & c  = aD;
-                        y11 +=c*r13;
-                        y23 += c *r21;
-                    }
-                    {
-                        real & c  = aA;
-                        y12 += c * r12;
-                        y22 += c* r22;
-                    }
-                    {
-                        real & c = aE;
-                        y12 += c * r13;
-                        y23 += c * r22;
-                    }
-                    {
-                        real & c = aB;
-                        y13 += c * r12;
-                        y22 += c *r23;
-                    }
-                    {
-                        real & c = aF;
-                        y13 += c * r13;
-                        y23 += c *r23;
-                    }
-                    
-                    //_mutex.lock();
+
+                        {real & c = a0;
+                            
+                            y10 += c*r10;
+                            y20 += c*r20;
+                        }
+                        {
+                            real & c = a1;
+                            y11 += c * r10;
+                            y20 += c * r21;
+                        }
+                        {
+                            real & c = a3;
+                            y10 += c * r11;
+                            y21 += c * r20;
+                        }
+                        {
+                            real & c = a2;
+                            y12 += c * r10;
+                            y20 += c * r22;
+                        }
+                        {
+                            real& c = a6;
+                            y10 += c * r12;
+                            y22 += c* r20;
+                        }
+                        {
+                            real & c = a4;
+                            y11 += c * r11;
+                            y21 += c * r21;
+                        }
+                        {
+                            real & c = a7;
+                            y11+= c*r12;
+                            y22 += c *r21;
+                        }
+                        {
+                            real & c = a5;
+                            y12 += c *r11;
+                            y21 += c *r22;
+                        }
+                        {
+                            real &c  = a8;
+                            y12 += c *r12;
+                            y22 += c * r22;
+                        }
                     Y1_[0] += y10;
                     Y1_[1] += y11;
                     Y1_[2] += y12;
-                    Y1_[3] += y13;
                     Y2_[0] += y20;
                     Y2_[1] += y21;
                     Y2_[2] += y22;
-                    Y2_[3] += y23;
-                    //_mutex.unlock();
-                    #endif 
-                    #if BLOCKSIZE==3
-                    //to_add
+                    
+                        
                     #endif 
                     #if BLOCKSIZE==2
-                    //to_add
-                    #endif 
-                    
-
-                  
+                    #endif   
                 }
                 else
                 {
                     
-                    Y1_[0] += a0 * X1[0] + a4 * X1[1] + a8 * X1[2] + aC * X1[3];
-                    Y1_[1] += a1 * X1[0] + a5 * X1[1] + a9 * X1[2] + aD * X1[3];
-                    #if BLOCKSIZE >=3
-                    Y1_[2] += a2 * X1[0] + a6 * X1[1] + aA * X1[2] + aE * X1[3];
-                    #if BLOCKSIZE >=4
-                    Y1_[3] += a3 * X1[0] + a7 * X1[1] + aB * X1[2] + aF * X1[3];
-                    #endif
+                    #if BLOCKSIZE == 4
+                        Y1_[0] += a0 * X1[0] + a4 * X1[1] + a8 * X1[2] + aC * X1[3];
+                        Y1_[1] += a1 * X1[0] + a5 * X1[1] + a9 * X1[2] + aD * X1[3];
+                        Y1_[2] += a2 * X1[0] + a6 * X1[1] + aA * X1[2] + aE * X1[3];
+                        Y1_[3] += a3 * X1[0] + a7 * X1[1] + aB * X1[2] + aF * X1[3];
+                    #endif 
+                    #if BLOCKSIZE == 3 
+                        Y1_[0] += a0 * X1[0] + a3 * X1[1] + a6 * X1[2];
+                        Y1_[1] += a1 * X1[0] + a4 * X1[1] + a7 * X1[2];
+                        Y1_[2] += a2 * X1[0] + a5 * X1[1] + a8 * X1[2];
+                     
                     #endif 
                     
                 }
@@ -593,11 +662,14 @@ public:
                 real acc_10 = 0;
                 real acc_11 = 0;
                 real acc_12 = 0;
-                real acc_13 = 0;
+                
                 real acc_00 = 0;
                 real acc_01 = 0;
                 real acc_02 = 0;
-                real acc_03 = 0;
+                #if BLOCKSIZE == 4
+                    real acc_03 = 0;
+                    real acc_13 = 0;
+                #endif 
                 int k  = valid_phase_index[j];
                 work =  workingPhases[k][thNb];
                 swap = thNb >= (nbThreads - k);
@@ -633,6 +705,7 @@ public:
                     real a6 = work[6];
                     real a7 = work[7];
                     real a8 = work[8];
+                    #if BLOCKSIZE == 4
                     real a9 = work[9];
                     real aA = work[10];
                     real aB = work[11];
@@ -640,6 +713,7 @@ public:
                     real aD = work[13];
                     real aE = work[14];
                     real aF = work[15];
+                    #endif 
                     X1= X+iy;
                     X2= X+ix;
                     Y1_= Y_base + ix;
@@ -758,7 +832,71 @@ public:
                             
                             #endif 
                             #if BLOCKSIZE==3
-                            //to_add
+                                real y10 = 0;
+                                real y11 = 0;
+                                real y12=  0;
+                                real y20 = 0;
+                                real y21 = 0;
+                                real y22 = 0;
+                                real r10 = X1[0];
+                                real r11 = X1[1];
+                                real r12 = X1[2];
+                                real r20 = X2[0];
+                                real r21 = X2[1];
+                                real r22 = X2[2];
+
+                                    {real & c = a0;
+                                        
+                                        y10 += c*r10;
+                                        y20 += c*r20;
+                                    }
+                                    {
+                                        real & c = a1;
+                                        y11 += c * r10;
+                                        y20 += c * r21;
+                                    }
+                                    {
+                                        real & c = a3;
+                                        y10 += c * r11;
+                                        y21 += c * r20;
+                                    }
+                                    {
+                                        real & c = a2;
+                                        y12 += c * r10;
+                                        y20 += c * r22;
+                                    }
+                                    {
+                                        real& c = a6;
+                                        y10 += c * r12;
+                                        y22 += c* r20;
+                                    }
+                                    {
+                                        real & c = a4;
+                                        y11 += c * r11;
+                                        y21 += c * r21;
+                                    }
+                                    {
+                                        real & c = a7;
+                                        y11+= c*r12;
+                                        y22 += c *r21;
+                                    }
+                                    {
+                                        real & c = a5;
+                                        y12 += c *r11;
+                                        y21 += c *r22;
+                                    }
+                                    {
+                                        real &c  = a8;
+                                        y12 += c *r12;
+                                        y22 += c * r22;
+                                    }
+                                Y1_[0] += y10;
+                                Y1_[1] += y11;
+                                Y1_[2] += y12;
+                                Y2_[0] += y20;
+                                Y2_[1] += y21;
+                                Y2_[2] += y22;
+                                    
                             #endif 
                             #if BLOCKSIZE==2
                             //to_add
@@ -770,13 +908,16 @@ public:
                     else
                         {
                           
-                            Y1_[0] += a0 * X1[0] + a4 * X1[1] + a8 * X1[2] + aC * X1[3];
-                            Y1_[1] += a1 * X1[0] + a5 * X1[1] + a9 * X1[2] + aD * X1[3];
-                            #if BLOCKSIZE >=3
-                            Y1_[2] += a2 * X1[0] + a6 * X1[1] + aA * X1[2] + aE * X1[3];
-                            #if BLOCKSIZE >=4
-                            Y1_[3] += a3 * X1[0] + a7 * X1[1] + aB * X1[2] + aF * X1[3];
+                            #if BLOCKSIZE ==4
+                            acc_10 += a0 * X1[0] + a4 * X1[1] + a8 * X1[2] + aC * X1[3];
+                            acc_11 += a1 * X1[0] + a5 * X1[1] + a9 * X1[2] + aD * X1[3];
+                            acc_12 += a2 * X1[0] + a6 * X1[1] + aA * X1[2] + aE * X1[3];
+                            acc_13 += a3 * X1[0] + a7 * X1[1] + aB * X1[2] + aF * X1[3];
                             #endif
+                            #if BLOCKSIZE == 3
+                            acc_10 += a0 * X1[0] + a3 * X1[1] + a6 * X1[2];
+                            acc_11 += a1 * X1[0] + a4 * X1[1] + a7 * X1[2];
+                            acc_12 += a2 * X1[0] + a5 * X1[1] + a8 * X1[2];
                             #endif 
                         
                         
@@ -797,10 +938,10 @@ public:
                     real a6 = work[BLOCKSIZE*BLOCKSIZE*m+6];
                     real a7 = work[BLOCKSIZE*BLOCKSIZE*m+7];
                     real a8 = work[BLOCKSIZE*BLOCKSIZE*m+8];
+                    #if BLOCKSIZE ==4 
                     real a9 = work[BLOCKSIZE*BLOCKSIZE*m+9];
                     real aA = work[BLOCKSIZE*BLOCKSIZE*m+10];
                     real aB = work[BLOCKSIZE*BLOCKSIZE*m+11];
-                    #if BLOCKSIZE ==4 
                     real aC = work[BLOCKSIZE*BLOCKSIZE*m+12];
                     real aD = work[BLOCKSIZE*BLOCKSIZE*m+13];
                     real aE = work[BLOCKSIZE*BLOCKSIZE*m+14];
@@ -817,11 +958,14 @@ public:
                             Y1_[0] += acc_00;
                             Y1_[1] += acc_01;
                             Y1_[2] += acc_02;
+                            #if BLOCKSIZE == 4
                             Y1_[3] += acc_03;
+                            acc_03 = 0;
+                            #endif 
                             acc_00 = 0;
                             acc_01 = 0;
                             acc_02 = 0;
-                            acc_03 = 0;
+                            
                             Y1_= Y_base+ ix;
                             //std::cout<<"Y1_ set to "<<ix<<"\n";
                         }
@@ -832,11 +976,14 @@ public:
                             Y2_[0] += acc_10;
                             Y2_[1] += acc_11;
                             Y2_[2] += acc_12;
+                            #if BLOCKSIZE ==4
                             Y2_[3] += acc_13;
+                            acc_13 = 0;
+                            #endif 
                             acc_10 = 0;
                             acc_11 = 0;
                             acc_12 = 0;
-                            acc_13 = 0;
+                            
                             Y2_= Y_swap+iy;
                             //std::cout<<"Y2_ set to "<<iy<<"\n";
                         }
@@ -956,6 +1103,71 @@ public:
 
                             #endif 
                             #if BLOCKSIZE==3
+                                real y10 = 0;
+                                real y11 = 0;
+                                real y12=  0;
+                                real y20 = 0;
+                                real y21 = 0;
+                                real y22 = 0;
+                                real r10 = X1[0];
+                                real r11 = X1[1];
+                                real r12 = X1[2];
+                                real r20 = X2[0];
+                                real r21 = X2[1];
+                                real r22 = X2[2];
+
+                                    {real & c = a0;
+                                        
+                                        y10 += c*r10;
+                                        y20 += c*r20;
+                                    }
+                                    {
+                                        real & c = a1;
+                                        y11 += c * r10;
+                                        y20 += c * r21;
+                                    }
+                                    {
+                                        real & c = a3;
+                                        y10 += c * r11;
+                                        y21 += c * r20;
+                                    }
+                                    {
+                                        real & c = a2;
+                                        y12 += c * r10;
+                                        y20 += c * r22;
+                                    }
+                                    {
+                                        real& c = a6;
+                                        y10 += c * r12;
+                                        y22 += c* r20;
+                                    }
+                                    {
+                                        real & c = a4;
+                                        y11 += c * r11;
+                                        y21 += c * r21;
+                                    }
+                                    {
+                                        real & c = a7;
+                                        y11+= c*r12;
+                                        y22 += c *r21;
+                                    }
+                                    {
+                                        real & c = a5;
+                                        y12 += c *r11;
+                                        y21 += c *r22;
+                                    }
+                                    {
+                                        real &c  = a8;
+                                        y12 += c *r12;
+                                        y22 += c * r22;
+                                    }
+                                acc_00 += y10;
+                                acc_01 += y11;
+                                acc_02 += y12;
+                                acc_10 += y20;
+                                acc_11 += y21;
+                                acc_12 += y22;
+                                  
 
                             #endif 
                             #if BLOCKSIZE==2
@@ -973,7 +1185,7 @@ public:
                             acc_12 += a2 * X1[0] + a6 * X1[1] + aA * X1[2] + aE * X1[3];
                             acc_13 += a3 * X1[0] + a7 * X1[1] + aB * X1[2] + aF * X1[3];
                             #endif
-                            #if BLOCKSIZE == 4
+                            #if BLOCKSIZE == 3
                             acc_10 += a0 * X1[0] + a3 * X1[1] + a6 * X1[2];
                             acc_11 += a1 * X1[0] + a4 * X1[1] + a7 * X1[2];
                             acc_12 += a2 * X1[0] + a5 * X1[1] + a8 * X1[2];
@@ -990,243 +1202,20 @@ public:
                 Y1_[0] += acc_00;
                 Y1_[1] += acc_01;
                 Y1_[2] += acc_02;
-                Y1_[3] += acc_03;
+                
                 Y2_[0] += acc_10;
                 Y2_[1] += acc_11;
                 Y2_[2] += acc_12;
-                Y2_[3] += acc_13;
+                #if BLOCKSIZE ==4
+                    Y2_[3] += acc_13;
+                    Y1_[3] += acc_03;
+                #endif 
                 }
                 barrier2.arrive_and_wait();
                 j++;
             }
         }
-    void workThread3(std::barrier<>& barrier2, int thNb)
-        {
 
-
-        int j = 0;
-        
-        real* work;
-        int work_nb;
-        
-        const real* X1;
-        const real* X2;
-        real* Y1_;
-        real* Y2_;
-        bool swap = false;
- 
-        while(j<valid_phase_index.size())
-        {
-            
-            
-         
-           
-            int k  = valid_phase_index[j];
-            work =  newPhases[k];//Fetch the phase
-            
-            work_nb = work_lengths[k][thNb];
-            int* index = newIndexes[k];
-            
-            swap = thNb >= (nbThreads - k);
-            
-            for(int m = 0; m<work_nb; m++)
-            {
-            
-                
-                
-                int ix = index[(thNb+m*nbThreads)*2+0];
-                int iy = index[(thNb+m*nbThreads)*2+1];
-              
-               
-                real a0 = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+0];
-                real a1 = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+1];
-                real a2 = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+2];
-                real a3 = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+3];
-                #if BLOCKSIZE >=3
-                real a4 = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+4];
-                real a5 = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+5];
-                real a6 = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+6];
-                real a7 = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+7];
-                real a8 = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+8];
-                #if BLOCKSIZE >=4
-                real a9 = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+9];
-                real aA = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+10];
-                real aB = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+11];
-                real aC = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+12];
-                real aD = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+13];
-                real aE = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+14];
-                real aF = work[BLOCKSIZE*BLOCKSIZE*(m*nbThreads+thNb)+15];
-                #endif
-                #endif 
-                
-                if(swap)
-                {
-                    X1 = X  + iy; //no swap
-                    X2 = X  + ix;
-                    Y1_= Y1 + ix;
-                    Y2_= Y2 + iy;
-                    
-                }
-                else
-                {
-              
-                    X1 = X  + iy;
-                    X2 = X  + ix;
-                    Y1_= Y2 + ix;
-                    Y2_= Y1 + iy;
-                    
-                    
-                }
-                
-                if(ix-iy !=0)
-                {
-                    
-                    #if BLOCKSIZE==4
-                    real y10 = 0;
-                    real y11 = 0;
-                    real y12=0;
-                    real y13=0;
-                    real y20 = 0;
-                    real y21 = 0;
-                    real y22 = 0;
-                    real y23=0;
-                    real r10 = X1[0];
-                    real r11 = X1[1];
-                    real r12 = X1[2];
-                    real r13 = X1[3];
-                    real r20 = X2[0];
-                    real r21 = X2[1];
-                    real r22 = X2[2];
-                    real r23 = X2[3];
-                    {real & c = a0;
-                        
-                        y10 += c*r10;
-                        y20 += c*r20;
-                    }
-                    {
-                        real & c = a1;
-                        y11 += c * r10;
-                        y20 += c * r21;
-                    }
-                    {
-                        real & c = a4;
-                        y10 += c * r11;
-                        y21 += c * r20;
-                    }
-                    {
-                        real & c = a2;
-                        y12 += c * r10;
-                        y20 += c * r22;
-                    }
-                    {
-                        real& c = a8;
-                        y10 += c * r12;
-                        y22 += c* r20;
-                    }
-                    {
-                        real & c = a3;
-                        y13 += c * r10;
-                        y20 += c * r23;
-                    }
-                    {
-                        real & c  = aC;
-                        y10 += c *r13;
-                        y23 += c * r20;
-                    }
-                    {
-                        real & c = a5;
-                        y11+= c*r11;
-                        y21 += c *r21;
-                    }
-                    {
-                        real & c=  a6;
-                        y12 += c*r11;
-                        y21 += c*r22;
-                    }
-                    {
-                        real & c = a9;
-                        y11 += c *r12;
-                        y22 += c *r21;
-                    }
-                    {
-                        real &c  = a7;
-                        y13 += c *r11;
-                        y21 += c * r23;
-                    }
-                    {
-                        real & c  = aD;
-                        y11 +=c*r13;
-                        y23 += c *r21;
-                    }
-                    {
-                        real & c  = aA;
-                        y12 += c * r12;
-                        y22 += c* r22;
-                    }
-                    {
-                        real & c = aE;
-                        y12 += c * r13;
-                        y23 += c * r22;
-                    }
-                    {
-                        real & c = aB;
-                        y13 += c * r12;
-                        y22 += c *r23;
-                    }
-                    {
-                        real & c = aF;
-                        y13 += c * r13;
-                        y23 += c *r23;
-                    }
-                    
-                    
-                    Y1_[0] += y10;
-                    Y1_[1] += y11;
-                    Y1_[2] += y12;
-                    Y1_[3] += y13;
-                    Y2_[0] += y20;
-                    Y2_[1] += y21;
-                    Y2_[2] += y22;
-                    Y2_[3] += y23;
-                    
-                    #endif 
-                    #if BLOCKSIZE==3
-                    //to_add
-                    #endif 
-                    #if BLOCKSIZE==2
-                    //to_add
-                    #endif 
-                    
-
-                   
-                }
-                else
-                {
-                    #if BLOCKSIZE ==4
-                    Y2_[0] += a0 * X1[0] + a4 * X1[1] + a8 * X1[2] + aC * X1[3];
-                    Y2_[1] += a1 * X1[0] + a5 * X1[1] + a9 * X1[2] + aD * X1[3];
-                    Y2_[2] += a2 * X1[0] + a6 * X1[1] + aA * X1[2] + aE * X1[3];
-                    Y2_[3] += a3 * X1[0] + a7 * X1[1] + aB * X1[2] + aF * X1[3];
-                    #endif
-                    #if BLOCKSIZE ==3
-                    Y2_[0] += a0 * X1[0] + a3 * X1[1] + a6 * X1[2];
-                    Y2_[1] += a1 * X1[0] + a4 * X1[1] + a7 * X1[2];
-                    Y2_[2] += a2 * X1[0] + a5 * X1[1] + a8 * X1[2];
-                    #endif
- 
-                
-                }
-            }
-            
-           
-            j++;
-            barrier2.arrive_and_wait();
-            
-            
-        }
-       
-        }
-   
     void vecMulAddnTimes2(const real*X_calc, real*Y, int n_time)
         {
 

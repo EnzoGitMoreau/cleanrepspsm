@@ -472,10 +472,10 @@
                 {
                     //std::cout<<Y_res[i]<<" ";
                 }
-                 diffile<<"\nResultat computation rsb\n";
+                 diffile<<"\nResultat computation res\n";
                 for(int i =0; i< size; i++)
                 {
-                    diffile<<Y_rsb[i]<<" ";
+                    diffile<<Y_res[i]<<" ";
                 }
                  diffile<<"\n\n\n\n\nResultat computation true\n";
                 for(int i =0; i< size; i++)
