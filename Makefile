@@ -1,13 +1,16 @@
-CXX = /opt/homebrew/Cellar/llvm/18.1.5/bin/clang++
-CC = /opt/homebrew/Cellar/llvm/18.1.5/bin/clang
 
-OPENBLAS_DIR = /opt/homebrew/Cellar/openblas/0.3.27
-OPENMP_DIR = /opt/Homebrew/Cellar/libomp/18.1.6
-ARM_PER_LIB = /opt/arm/armpl_24.04_flang-new_clang_18
+LLVM_PATH= /opt/homebrew/Cellar/llvm/18.1.5/#Default path, please change here (versioning might be enough)
+OPENBLAS_DIR = /opt/homebrew/Cellar/openblas/0.3.27/#Default path, please change here (versioning might be enough)
+OPENMP_DIR = /opt/Homebrew/Cellar/libomp/18.1.6#Default path, please change here (versioning might be enough)
+ARM_PER_LIB = /opt/arm/armpl_24.04_flang-new_clang_18#Default path, please change here (versioning might be enough)
+
+
 CURRENT_DIR = $(shell pwd)
 EXEC = tests
 CXXFLAGS =  -Xclang -std=c++20 -fopenmp=libomp -O3 -flto
 VARS = -DMATRIXMARKET -DMACOS
+CXX = $(LLVM_PATH)bin/clang++
+CC = $(LLVM_PATH)bin/clang
 
 
 INCLUDES = -Iinclude/ \
@@ -17,9 +20,15 @@ INCLUDES = -Iinclude/ \
 	
 LIBRSB =  $(shell echo $$HOME)/local/librsb/bin/
 $(shell export PATH=PATH:$(LIBRSB))
+
+
 SRC_PATH = src
 LIB_DIRS = -L$(OPENBLAS_DIR)/lib  -L/usr/local/lib -L$(OPENMP_DIR)/lib -L$(ARM_PER_LIB)/lib
 LIBS = -lopenblasp-r0.3.27  
+#To activate ARMPL
+#Uncomment line 30 and add -DARMPL in line 42, 43, 45
+#LIBS = -lopenblasp-r0.3.27  -larmpl
+
 SRCS = $(SRC_PATH)/main.cpp \
  $(SRC_PATH)/sparmatsymblk.cc \
  $(SRC_PATH)/MatSymBMtInstance.cpp \
@@ -30,7 +39,7 @@ OBJS := $(OBJS:.cc=.o)
 TARGET = $(EXEC)
 BLOCKSIZE = 3
 macOS:
-	$(MAKE) all VARS="-DMACOS -DCYTOSIM -DCYTOSIM_TEST -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW -DBLOCKSIZE=$(BLOCKSIZE) $(VERBOSE)"
+	$(MAKE) all VARS="-DMACOS -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW -DCYTOSIM_TEST -DBLOCKSIZE=$(BLOCKSIZE) $(VERBOSE)"
 macOS-mmkt:
 	$(MAKE) all VARS="-DMATRIXMARKET -DMACOS -DCYTOSIM -DCYTOSIM_ORIGINAL  -DCYTOSIM_TEST -DCYTOSIM_NEW -DBLOCKSIZE=$(BLOCKSIZE) $(VERBOSE)"
 macOS-cytosimMat:
