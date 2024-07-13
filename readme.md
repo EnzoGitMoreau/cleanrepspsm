@@ -3,6 +3,33 @@
 Symmetric Sparse Matrix (block oriented) matrix vector multiplication algorithm
 </h1>
 
+## How to install
+
+## Macos
+
+1- Install Homebrew
+2- install llvm's clang by with homebrew: brew install llvm
+3- install openblas with homebrew : brew install openblas 
+4- report installation directories in the makefile
+5 (optional)- install ARMPL library to compare with ARM algorithms
+
+
+## Linux
+
+1- Download & install LibRSB
+by executing:
+
+ 1. wget https://sourceforge.net/projects/librsb/files/latest/download
+ 2. mv download librsb.tar.gz
+tar -xf librsb.tar.gz
+cd librsb-(VERSION) *Enter your version here*
+./configure --enable-fortran-module-install --enable-matrix-types="double, double complex" \
+	CC=gcc CXX=g++ FC=gfortran CFLAGS=-O3 CXXFLAGS=-O3 FCFLAGS=-O3 --prefix=$HOME/local
+	
+ 3. Add librsb to PATH by typing : 
+ export PATH=\$PATH:$HOME/local/librsb/bin/
+ Before each compilation
+
 <h1>How to compile</h1>
 <h2>macOS</h2>
 <p>Requires ARMPL library for comparaison, install ARMPL on ARM website then compile with make macOS
