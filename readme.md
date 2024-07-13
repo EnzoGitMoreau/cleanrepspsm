@@ -1,3 +1,4 @@
+
 <h1>
 Symmetric Sparse Matrix (block oriented) matrix vector multiplication algorithm
 </h1>
@@ -32,3 +33,26 @@ Algorithms will do numberOfMultiplications Matrix-Vector multiplications and dur
 <p>tests [nbThreads] [numberOfMultiplications] [pathToMatrix] [pathToVector]<br>
 Algorithms will do numberOfMultiplications Matrix-Vector multiplications and duration times will be printed
 </p>
+
+## Verbosity options
+
+To manage verbosity options, refer to the VERBOSITY line in the Makefile.
+
+ - -DVERBOSITY = 2, full logging of computation process, writing of matrix multiplications results and differences between algorithms and computation times.
+ - -DVERBOSITY = 1, writing of matrix multiplications results and differences between algorithms and computation times.
+- -DVERBOSITY = 0, writing of computation times.
+
+Config file for output is include/tests_macro.hpp
+OUT_PATH specifies the output for computation times.
+ *Default is res/compute.out*
+DIFFILE_P specifies the output for differences between algorithms. 
+*Default is diffile.out*
+
+## Important files
+
+- in src: main.cpp generates tests.
+- in include: 
+	- MatSymBMtInstance.hpp implements the new algorithm for multi-threaded : SPSM Vec-Mul
+	- matrix_market_reader.hpp and cytosim_matrix_reader.hpp implements parsing of matrix files.
+	- custom_alg.hpp gives functions for random matrix generations 
+
