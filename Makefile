@@ -1,5 +1,5 @@
 
-LLVM_PATH= /opt/homebrew/Cellar/llvm/18.1.5/#Default path, please change here (versioning might be enough)
+LLVM_PATH= /opt/homebrew/Cellar/llvm/18.1.8/#Default path, please change here (versioning might be enough)
 OPENBLAS_DIR = /opt/homebrew/Cellar/openblas/0.3.27/#Default path, please change here (versioning might be enough)
 OPENMP_DIR = /opt/Homebrew/Cellar/libomp/18.1.6#Default path, please change here (versioning might be enough)
 ARM_PER_LIB = /opt/arm/armpl_24.04_flang-new_clang_18#Default path, please change here (versioning might be enough)
