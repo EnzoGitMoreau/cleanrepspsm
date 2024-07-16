@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 import subprocess
 import seaborn
-plt.style.use('https://github.com/dhaitz/matplotlib-stylesheets/raw/master/pitayasmoothie-light.mplstyle')
+#if no Internet please comment the line 7 
+#plt.style.use('https://github.com/dhaitz/matplotlib-stylesheets/raw/master/pitayasmoothie-light.mplstyle')
 
 
 #plt.style.use('seaborn')
@@ -39,7 +40,7 @@ class IntParameter(Parameter):
 			self.it+=1
 			self.value = int(self.default_value - (self.default_value- self.endpoint) * self.it / self.nbSteps)
 	def log(self):
-		return int(self.default_value + (self.default_value- self.endpoint) * self.it / self.nbSteps)
+		return int(self.default_value - (self.default_value- self.endpoint) * self.it / self.nbSteps)
 	def parse(self, v1,v2,v3):
 		return int(v1),int(v2),int(v3)
 class FloatParameter(Parameter):
@@ -54,11 +55,11 @@ class FloatParameter(Parameter):
 			return self.default_value
 		else: 
 			self.it+=1
-			self.value = self.default_value + (self.default_value- self.endpoint) * self.it / self.nbSteps
+			self.value = self.default_value - (self.default_value- self.endpoint) * self.it / self.nbSteps
 	def log(self):
-		return self.default_value + (self.default_value- self.endpoint) * self.it / self.nbSteps
+		return self.default_value - (self.default_value- self.endpoint) * self.it / self.nbSteps
 	def parse(self, v1,v2,v3):
-		return float(v1),float(v2),float(v3)
+		return float(v1),float(v2),int(v3)
 PARAMETERS_TEMPLATE = [IntParameter("nbThreads", -1), IntParameter("matrixSize", -1), IntParameter("matrixRep",-1), FloatParameter("blockper", -1)]
 class TestInstance():
 	executable_path = "tests"
@@ -67,8 +68,9 @@ class TestInstance():
 	varying_param_log = []
 	
 	def __init__(self,choice, start_value, max_value, nbTests):
-		self.possible_parameters = [IntParameter("nbThreads", 8), IntParameter("matrixSize", 10000), IntParameter("matrixRep",10000), FloatParameter("blockper", 0.1)]
-		self.algorithms = ["ARMPL","RSB","CYTOSIM_ORIGINAL", "CYTOSIM_NEW" ,"CYTOSIM_TEST"]
+		print(nbTests)
+		self.possible_parameters = [IntParameter("nbThreads", 8), IntParameter("matrixSize", 8000), IntParameter("matrixRep",100), FloatParameter("blockper", 0.1)]
+		self.algorithms = ["ARMPL","RSB","CYTOSIM_ORIGINAL","MatrixSymmetric", "CYTOSIM_NEW" ,"CYTOSIM_TEST"]
 		self.choice = choice
 		self.max_value = max_value
 		self.start_value = start_value
@@ -102,14 +104,17 @@ class TestInstance():
 		for algo in self.algorithms:
 			self.results[algo].append(int(res[i]))
 			i+=1
-		self.results[self.variating_parameter.name].append(int(self.variating_parameter.value))
+		self.results[self.variating_parameter.name].append(self.variating_parameter.log())
 	def createGraph(self):
 		if(self.isRun):
-			plt.figure(dpi=500)
+			plt.figure(dpi=100)
 			for algo in self.algorithms:
-				plt.plot(self.results[self.variating_parameter.name], self.results[algo],label=algo)
-				plt.title("Computational time in term of "+self.variating_parameter.name)
-				plt.legend()
+				if(self.results[algo][0] != -1):
+					plt.plot(self.results[self.variating_parameter.name], self.results[algo],label=algo)
+					plt.title("Computational time in term of "+self.variating_parameter.name)
+					plt.legend()
+			plt.xlabel(self.variating_parameter.name)
+			plt.ylabel("Computational time")
 			plt.show()
 		else:
 			raise Exception("Do not run createGraph before runTests")

@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <matrix.h>
 #include <iostream>
 #include "tests_macro.hpp"
 //------------------------------Compilation checking------------------------------------------------
@@ -155,6 +155,7 @@
     #endif 
 
 
+
     int main(int argc, char* argv[])
     {
 //------------------------------Base objects----------------------------------------------------------------
@@ -163,7 +164,7 @@
         auto stop= CLOCK
         OPEN_OUTFILE;
         SparMatSymBlk testMatrix = SparMatSymBlk();
-        
+        MatrixSymmetric symMatrix = MatrixSymmetric();
         int size = 0;
         int nb_threads;
         int nMatrix = 1;
@@ -276,6 +277,12 @@
             VLOG("Constructed matrix of size "+CONV(size)<<" with "+CONV((size*block_percentage/BLOCKSIZE)*(size*block_percentage/BLOCKSIZE))+" blocks of size "+CONV(BLOCKSIZE));
             VLOG("Preparing to do"+CONV(nMatrix)+" multiplications");
 
+            VLOG("Constructing Symmetric Matrix from SPSM");
+            symMatrix.resize(size);
+            symMatrix.reset();
+            SPSMtoSym(&symMatrix, &testMatrix);
+            VLOG("Conducted properly");
+
         #endif
         
 //------------------------------Reading given matrix------------------------------------------------
@@ -321,6 +328,9 @@
         #ifdef CYTOSIM_TEST 
             real* Y_test = (real*)malloc(size * sizeof(real));//Y_diff that will store differences
         #endif
+       
+            real* Y_sym = (real*)malloc(size * sizeof(real));//Y_diff that will store differences
+       
 
 
         for(int i=0; i<size;i++)
@@ -332,6 +342,7 @@
         #ifdef CYTOSIM_TEST
             Y_test[i] = 0;
         #endif
+            Y_sym[i] = 0;
 
         }
         testMatrix.prepareForMultiply(1);
@@ -374,6 +385,20 @@
             LOG_VALUE(start, stop);
             VLOG("Cytosim multiplications done in "+CONV(COUNT_T(start,stop))+" ms");
         #endif 
+        #ifdef CYTOSIM_ORIGINAL
+            VLOG("SymmetricMatrix multiplications");
+            start = CLOCK
+            for(int i=0; i<nMatrix;i++)
+            {
+                symMatrix.vecMulAdd(Vec, Y_sym);
+            }
+            stop= CLOCK
+            LOG_VALUE(start, stop);
+            VLOG("SymmetricMatrix multiplications done in "+CONV(COUNT_T(start,stop))+" ms");
+        #endif 
+        #ifndef CYTOSIM_ORIGINAL
+        LOG_NULL
+        #endif 
         #ifdef CYTOSIM_TEST
             VLOG("Starting new-impl-test matrix-vector multiplications");
             start = CLOCK
@@ -404,12 +429,14 @@
         
         LOG_DIFF(Y_res, Y_true, size, "V1","Correct")
         LOG_DIFF(Y_test, Y_true, size, "V2","Correct")
+        LOG_DIFF(Y_sym, Y_true, size, "MatrixSymmetric","Correct")
         #ifdef RSB
             LOG_DIFF(Y_rsb, Y_true, size, "RSB","Correct")
         #endif
         DIFF_FILE
         LOG_VEC(Y_res, size, "Version 1")
         LOG_VEC(Y_true, size, "Cytosim")
+        LOG_VEC(Y_sym, size, "MatrixSymmetric")
         LOG_VEC(Y_test, size, "Version 2")
         #ifdef RSB 
             LOG_VEC(Y_rsb, size, "LibRSB")

@@ -30,7 +30,7 @@
   
     #define OUTPATH "res/compute.out"
     #define SEPARATOR " "
-    #define FILE_HEADER "ARMPL RSB CYTOSIM_ORIGINAL CYTOSIM_NEW CYTOSIM_TEST\n";
+    #define FILE_HEADER "ARMPL RSB CYTOSIM_ORIGINAL MatrixSymmetric CYTOSIM_NEW CYTOSIM_TEST\n";
     #define OPEN_OUTFILE std::ofstream outfile;\
             outfile.open(OUTPATH);\
             outfile<<FILE_HEADER;

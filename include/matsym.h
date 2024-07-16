@@ -2,10 +2,6 @@
 
 #ifndef MATSYM_H
 #define MATSYM_H
-#define NB_THREADS 2
-
-//Nb thread = 6 doesnt work
-//Nb thread = 4 doesnt work
 #include "real.h"
 
 #include <cstdio>
@@ -29,13 +25,13 @@ private:
     size_t allocated_;
     
     // full upper triangle:
-    real* val;
+    
     
     // if 'false', destructor will not call delete[] val;
     bool in_charge;
     
 public:
-    
+    real* val;
     /// return the size of the matrix
     size_t size() const { return size_; }
     
@@ -59,6 +55,8 @@ public:
         zero_real(s*s, val);
         in_charge = true;
     }
+
+    
 
     /// constructor from an existing array
     MatrixSymmetric(size_t s, real* array, size_t ldd)

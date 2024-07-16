@@ -33,7 +33,7 @@ SRCS = $(SRC_PATH)/main.cpp \
  $(SRC_PATH)/sparmatsymblk.cc \
  $(SRC_PATH)/MatSymBMtInstance.cpp \
  $(SRC_PATH)/matsym.cc
-VERBOSE = -DVERBOSE=0
+VERBOSE = -DVERBOSE=2
 OBJS = $(SRCS:.cpp=.o)
 OBJS := $(OBJS:.cc=.o)
 TARGET = $(EXEC)

@@ -101,3 +101,64 @@ void add_block_to_pos_rsb(rsb::RsbMatrix<double>** mtx_ptr, SparMatSymBlk* matri
 
 }
 #endif
+
+#include <matsym.h>
+void SPSMtoSym(MatrixSymmetric* dest, SparMatSymBlk* origin)
+{
+    
+    for ( size_t j = origin->colidx_[0]; j <origin->rsize_; j = origin->colidx_[j+1] )
+    {
+
+        SparMatSymBlk::Column* col = &origin->column_[j];;
+        for ( size_t n = 0; n < col->nbb_; ++n )
+    {
+        
+        #if BLOCKSIZE ==3
+        
+        Matrix33 &M = col->blk_[n];
+ 
+        int x = n*BLOCKSIZE;
+        int y = j*BLOCKSIZE;
+     
+
+        dest->val[ std::max(x,y) + dest->size() * std::min(x,y) ] = M.val[0]; 
+        x++;
+        dest->val[ std::max(x,y) + dest->size() * std::min(x,y) ] = M.val[3]; 
+        x++;
+        dest->val[ std::max(x,y) + dest->size() * std::min(x,y) ] = M.val[6]; 
+        y++;
+
+        x = n*BLOCKSIZE;
+        dest->val[ std::max(x,y) + dest->size() * std::min(x,y) ] = M.val[1]; 
+        x++;
+         dest->val[ std::max(x,y) + dest->size() * std::min(x,y) ] = M.val[4]; 
+        x++;
+         dest->val[ std::max(x,y) + dest->size() * std::min(x,y) ] = M.val[7]; 
+        y++;
+        
+        x = n*BLOCKSIZE;
+         dest->val[ std::max(x,y) + dest->size() * std::min(x,y) ] = M.val[2]; 
+        x++;
+         dest->val[ std::max(x,y) + dest->size() * std::min(x,y) ] = M.val[5]; 
+        x++;
+         dest->val[ std::max(x,y) + dest->size() * std::min(x,y) ] = M.val[8]; 
+        y++;
+
+       
+        
+
+
+
+
+        #endif 
+        #if BLOCKSIZE ==4
+        Matrix44 &M=col.blk_[n];
+        #endif 
+        #if BLOCKSIZE ==2
+        Matrix22 & M = col.blk_[n];
+        #endif
+        //std::cout<< found block
+    }
+
+    }
+}
