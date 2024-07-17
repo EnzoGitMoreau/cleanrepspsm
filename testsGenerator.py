@@ -1,8 +1,43 @@
 import sys
-import matplotlib.pyplot as plt
-from tqdm import tqdm
 import subprocess
-import seaborn
+try:
+	import matplotlib.pyplot as plt
+except:
+	print("Requirement 'MatplotLib' not satisfied, trying to install automatically...")
+	subprocess.run(["pip"]+["install","matplotlib"], capture_output = True)
+	try:
+		import matplotlib.pyplot as plt 
+		print("Requirement 'Matplotlib' installed sucessfully")
+	except:
+		print("Could not install automatically try installing matplotlib using: pip install matplotlib. If not working, refer to matplotlib installation")
+try:
+	from tqdm import tqdm
+except:
+	print("Requirement 'tqdm' not satisfied, trying to install automatically...")
+	subprocess.run(["pip"]+["install","tqdm"], capture_output = True)
+	try:
+		from tqdm import tqdm
+		print("Requirement 'tqdm' installed sucessfully")
+	except:
+		print("Please install tqdm first, using: pip install tqdm. If not working, install pip first")
+try: 
+	import seaborn
+except:
+	print("Requirement 'seaborn' not satisfied, trying to install automatically...")
+	subprocess.run(["pip"]+["install","seaborn"], capture_output = True)
+	try:
+		from tqdm import tqdm
+		print("Requirement 'seaborn' installed sucessfully")
+	except:
+		print("Please install tqdm first, using: pip install seaborn. If not working, install pip first")
+#BASE VALUES
+DEFAULT_MATRIXSIZE = 10000
+DEFAULT_NBMULTIPLICATION = 100
+DEFAULT_BLOCKPERCENTAGE = 0.01
+DEFAULT_NBTHREADS = 4
+
+
+#
 #if no Internet please comment the line 7 
 #plt.style.use('https://github.com/dhaitz/matplotlib-stylesheets/raw/master/pitayasmoothie-light.mplstyle')
 
@@ -69,7 +104,7 @@ class TestInstance():
 	
 	def __init__(self,choice, start_value, max_value, nbTests):
 		print(nbTests)
-		self.possible_parameters = [IntParameter("nbThreads", 8), IntParameter("matrixSize", 8000), IntParameter("matrixRep",100), FloatParameter("blockper", 0.1)]
+		self.possible_parameters = [IntParameter("nbThreads", DEFAULT_NBTHREADS), IntParameter("matrixSize", DEFAULT_MATRIXSIZE), IntParameter("matrixRep", DEFAULT_NBMULTIPLICATION), FloatParameter("blockper", DEFAULT_BLOCKPERCENTAGE)]
 		self.algorithms = ["ARMPL","RSB","CYTOSIM_ORIGINAL","MatrixSymmetric", "CYTOSIM_NEW" ,"CYTOSIM_TEST"]
 		self.choice = choice
 		self.max_value = max_value
@@ -122,7 +157,7 @@ class TestInstance():
 if __name__ == "__main__":
 	if(len(sys.argv)!= 5):
 
-		print("Usage python3 testsGenerator.py paramter_chocie, start_value, end_value, nbTests")
+		print("Usage python3 testsGenerator.py parameter_choice, start_value, end_value, nbTests")
 	else:
 		b,c,d = PARAMETERS_TEMPLATE[int(sys.argv[1])].parse(sys.argv[2], sys.argv[3],sys.argv[4])
 		
