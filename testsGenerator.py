@@ -9,7 +9,15 @@ except:
 		import matplotlib.pyplot as plt 
 		print("Requirement 'Matplotlib' installed sucessfully")
 	except:
-		print("Could not install automatically try installing matplotlib using: pip install matplotlib. If not working, refer to matplotlib installation")
+		print("Could not install automatically, installing pip...")
+		subprocess.run(["python","m","ensurepip","--upgrade"])
+		print("pip installed, re-trying to install 'Matplotlib")
+		subprocess.run(["pip"]+["install","matplotlib"], capture_output = True)
+		try:
+			import matplotlib.pyplot as plt 
+			print("Requirement 'Matplotlib' installed sucessfully")
+		except:
+			print("Automatical installation failed")
 try:
 	from tqdm import tqdm
 except:
@@ -19,17 +27,34 @@ except:
 		from tqdm import tqdm
 		print("Requirement 'tqdm' installed sucessfully")
 	except:
-		print("Please install tqdm first, using: pip install tqdm. If not working, install pip first")
+		print("Could not install automatically, installing pip...")
+		subprocess.run(["python","m","ensurepip","--upgrade"])
+		print("pip installed, re-trying to install 'tqdm")
+		subprocess.run(["pip"]+["install","tqdm"], capture_output = True)
+		try:
+			from tqdm import tqdm
+			print("Requirement 'tqdm' installed sucessfully")
+		except:
+			print("Automatical installation failed")
 try: 
 	import seaborn
 except:
 	print("Requirement 'seaborn' not satisfied, trying to install automatically...")
 	subprocess.run(["pip"]+["install","seaborn"], capture_output = True)
 	try:
-		from tqdm import tqdm
+		import seaborn
 		print("Requirement 'seaborn' installed sucessfully")
 	except:
-		print("Please install tqdm first, using: pip install seaborn. If not working, install pip first")
+		print("Could not install automatically, installing pip...")
+		subprocess.run(["python","m","ensurepip","--upgrade"])
+		print("pip installed, re-trying to install 'seaborn")
+		subprocess.run(["pip"]+["install","seaborn"], capture_output = True)
+
+		try:
+			import seaborn
+			print("Requirement 'seaborn' sucessfully installed")
+		except:
+			print("Automatical installation failed")
 #BASE VALUES
 DEFAULT_MATRIXSIZE = 10000
 DEFAULT_NBMULTIPLICATION = 100
