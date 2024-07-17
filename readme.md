@@ -83,3 +83,32 @@ DIFFILE_P specifies the output for differences between algorithms.
 	- matrix_market_reader.hpp and cytosim_matrix_reader.hpp implements parsing of matrix files.
 	- custom_alg.hpp gives functions for random matrix generations 
 
+
+## Tests Launcher
+
+A small python script is also avaiable for automatic configuration and plotting of tests.
+
+It requires two libraries, matplotlib and tqdm. <br>
+Both can be installed using :<br>
+	- pip install tqdm 
+	- pip install matplotlib
+If pip is not installed on your machine please run first:<br>
+	-python -m enable-pip
+<br>
+Once installed, the program can be run using :
+	- python testsGenerator.py [parameterIndex] [startValue] [endValue] [nbSteps]
+	parameters index is a number between 0 and 3 that selects a parameter to modify for testing.
+		- 0 : nbThreads [between 1 and +infnty]
+		- 1 : matrixSize [between nbThreads and +infty]
+		- 2 : nbMultiplications [between 1 and +infty]
+		- 3 : blockPercentage ( density of matrix) [between 0 and 1]
+	
+	start_value : select the minimal value for testing
+	stop_value : select the highest value for testing
+	nbTests : select the number of step for testing 
+
+	Parameter is increased linearly between startValue and endValue in nbSteps. Each time the program will be launched with the new parameters.
+
+	For non-variating parameters, default values are used and can be found inside the testsGenerator.py as variables in the first lines of the file.
+
+
