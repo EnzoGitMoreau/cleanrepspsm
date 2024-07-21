@@ -1560,14 +1560,10 @@ void SparMatSymBlk::vecMul(const real* X, real* Y) const
 }
 
 
-void SparMatSymBlk::vecMulMtTest(int nbThreads, const real* X, real* Y, int nTime)
+void SparMatSymBlk::vecMulAddMt(int nbThreads, const real* X, real* Y, int nTime)
 {
     MatSymBMtInstance mtInstance(this, nbThreads);
-    mtInstance.vecMulAddnTimes4(X, Y, nTime);
+    mtInstance.vecMulAddnTimes(X, Y, nTime);
 }
 
-void SparMatSymBlk::vecMulMt2(int nbThreads, const real* X, real* Y, int nTime)
-{
-    MatSymBMtInstance mtInstance(this, nbThreads);
-    mtInstance.vecMulAddnTimes2(X, Y, nTime);
-}
+

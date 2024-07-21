@@ -159,7 +159,6 @@
     int main(int argc, char* argv[])
     {
 //------------------------------Base objects----------------------------------------------------------------
-        using milli = std::chrono::milliseconds;
         auto start = CLOCK
         auto stop= CLOCK
         OPEN_OUTFILE;
@@ -320,8 +319,7 @@
         real* Y_res = (real*)malloc(size * sizeof(real));//Y
         real* Y_true = (real*)malloc(size * sizeof(real));//Y_true to compare
         real* Y_rsb = (real*)malloc(size * sizeof(real));//Y_true to compare
-        real* Y_dif = (real*)malloc(size * sizeof(real));//Y_diff that will store differences
-        
+      
         #ifndef CYTMAT
             real* Vec = (real*)malloc(size * sizeof(real));//Defining vector to do MX
         #endif
@@ -400,12 +398,12 @@
         LOG_NULL
         #endif 
         #ifdef CYTOSIM_TEST
-            VLOG("Starting new-impl-test matrix-vector multiplications");
+            VLOG("Starting new-impl matrix-vector multiplications");
             start = CLOCK
-            testMatrix.vecMulMtTest(nb_threads, Vec, Y_test,nMatrix);
+            testMatrix.vecMulAddMt(nb_threads, Vec, Y_test,nMatrix);
             stop = CLOCK
             LOG_VALUE(start, stop);
-            VLOG("new-impl-test multiplications done in "+CONV(COUNT_T(start,stop))+" ms");
+            VLOG("new-impl multiplications done in "+CONV(COUNT_T(start,stop))+" ms");
         #endif
         #ifndef CYTOSIM_ORIGINAL
             LOG_NULL;
@@ -413,7 +411,7 @@
         #ifdef CYTOSIM_NEW
             VLOG("Starting new-impl matrix-vector multiplications");
             start = CLOCK
-                testMatrix.vecMulMt2(nb_threads, Vec, Y_res,nMatrix);
+                testMatrix.vecMulAddMt(nb_threads, Vec, Y_res,nMatrix);
             stop = CLOCK
             LOG_VALUE(start, stop);
             VLOG("new-impl multiplications done in "+CONV(COUNT_T(start,stop))+" ms");

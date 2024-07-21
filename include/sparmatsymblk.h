@@ -321,10 +321,9 @@ public:
     int bad() const;
     
    
-    void vecMulAddMt(int nbThreads, const real* X, real* Y);
-
-    void vecMulMtTest(int nbThreads, const real* X, real* Y, int nTime);
-    void vecMulMt2(int nbThreads, const real* X, real* Y, int nTime);
+  
+    void vecMulAddMt(int nbThreads, const real* X, real* Y, int nTime);
+  
 
     void work2(int nbThreads, const real* X, real* Y);
 };

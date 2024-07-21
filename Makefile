@@ -7,7 +7,7 @@ ARM_PER_LIB = /opt/arm/armpl_24.04_flang-new_clang_18#Default path, please chang
 
 CURRENT_DIR = $(shell pwd)
 EXEC = tests
-CXXFLAGS =  -Xclang -std=c++20 -fopenmp=libomp -O3 -flto
+CXXFLAGS =  -Xclang -std=c++20 -fopenmp=libomp -O3 -flto -Wall
 VARS = -DMATRIXMARKET -DMACOS
 CXX = $(LLVM_PATH)bin/clang++
 CC = $(LLVM_PATH)bin/clang

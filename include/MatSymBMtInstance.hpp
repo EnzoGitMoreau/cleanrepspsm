@@ -43,8 +43,8 @@ private:
     int thNb =0;
     int threadBlockSize;
     real*** workingPhases;
-    real** newPhases;
-    int** newIndexes;
+
+
     int*** workingIndexes;
    
 
@@ -64,99 +64,30 @@ public:
             Y2[i] = 0;
         }
     }
+    //Generate blocks transforms the matrix fom SparMatSymBlk format to a multi-thread ready format 
+    // Assigning each part of the matrix to a given thread
+    // The repartition are given using grids, phase_number and thread_map explained in the pdf.
+    
     void generateBlocks()
     {
       
         phase_tab = (int*) malloc(sizeof(int)*nbThreads);
         phase_tab[0] = 0;
-        if(nbThreads %2 == 0)
+        if(nbThreads%2==0)
         {
-            phase_number = nbThreads /2 +1;
-            if(nbThreads == 4)
-            {
-                phase_tab[0] = 0;
-                phase_tab[1] = 1;
-                phase_tab[2] = 2;
-                phase_tab[3] = 1;
-
-            }
-            else
-            {
-            for(int i =1; i<=nbThreads/2;i++)
-            {
-                phase_tab[i] = i;
-                
-            }
-            for(int i=1 ; i<nbThreads/2;i++)
-            {
-                phase_tab[nbThreads/2 + i] = nbThreads/2 - i;
-              
-            }
-            }
+        phase_number = nbThreads /2 + 1; //Si nbThreads pari 
         }
         else
         {
-          
-            phase_number  = (nbThreads +1) / 2;
-            if(nbThreads == 3)
-            {
-                phase_tab[0] = 0;
-                phase_tab[1] = 1;
-                phase_tab[2] = 1;
-            }
-            if(nbThreads == 5)
-            {
-                phase_tab[0] = 0;
-                phase_tab[1] = 1;
-                phase_tab[2] = 2;
-                phase_tab[3] = 2;
-                phase_tab[4] = 1;
-
-            }
-            if(nbThreads == 7)
-            {
-                phase_tab[0] = 0;
-                phase_tab[1] = 1;
-                phase_tab[2] = 2;
-                phase_tab[3] = 3;
-                phase_tab[4] = 3;
-                phase_tab[5] = 2;
-                phase_tab[6] = 1;
-
-            }
-             if(nbThreads == 9)
-            {
-                phase_tab[0] = 0;
-                phase_tab[1] = 1;
-                phase_tab[2] = 2;
-                phase_tab[3] = 3;
-                phase_tab[4] = 4;
-                phase_tab[5] = 4;
-                phase_tab[6] = 3;
-                phase_tab[7] = 2;
-                phase_tab[8] = 1;
-
-            }
-             if(nbThreads == 11)
-            {
-                phase_tab[0] = 0;
-                phase_tab[1] = 1;
-                phase_tab[2] = 2;
-                phase_tab[3] = 3;
-                phase_tab[4] = 4;
-                phase_tab[5] = 5;
-                phase_tab[6] = 5;
-                phase_tab[7] = 4;
-                phase_tab[8] = 3;
-                phase_tab[9] = 2;
-                phase_tab[10] = 1;
-
-            }
+        phase_number = (nbThreads +1)/2; //Si n impair 
         }
-        
+
         workingPhases = (real***) malloc(sizeof(real**)*phase_number);
         workingIndexes = (int***)malloc(sizeof(int**)*phase_number);
-        
+        for(int i =0; i<nbThreads; i++)
+        {
+            phase_tab[i] = (int)(nbThreads / 2 - fabs(i - nbThreads/ 2)); //Pattern explained in pdf
+        }
         QueueBlock*** phasesTemp = (QueueBlock***) malloc(sizeof(QueueBlock**) * phase_number);
         threadBlockSize = (int) matrix->size() / (BLOCKSIZE * nbThreads);
         int* phase_counter = (int*) malloc(sizeof(int)*phase_number);
@@ -322,19 +253,7 @@ public:
         thNb++;
         return thNb-1;
     }
-    void work2(std::barrier<>& barrier,std::barrier<>& barrier2, int n_work)
-    {
-        _mutex.lock();
-        int thread_nb = thread_number();
-        _mutex.unlock();
-        
-        for(int m = 0; m<n_work;m++)
-        {
-            workThread2(barrier2, thread_nb);
-            barrier.arrive_and_wait();
-        }
-    } 
-    void work4(std::barrier<>& barrier,std::barrier<>& barrier2, int n_work)
+    void work(std::barrier<>& barrier,std::barrier<>& barrier2, int n_work)
     {
        
         _mutex.lock();
@@ -343,281 +262,12 @@ public:
         
         for(int m = 0; m<n_work;m++)
         {
-            workThread4(barrier2, thread_nb);
+            workThread(barrier2, thread_nb);
         }
     } 
-    void workThread2(std::barrier<>& barrier2, int thNb)
-        {
-        int active_work_count;
-        int j = 0;
-        real* work;
-        int work_nb;
-        const real* X1;
-        const real* X2;
-        real* Y1_;
-        real* Y2_;
-        bool swap = false;
-        while(j<valid_phase_index.size())
+    void workThread(std::barrier<>& barrier2, int thNb)
         {
             
-            barrier2.arrive_and_wait();
-
-            int k  = valid_phase_index[j];
-            
-            swap = thNb >= (nbThreads - k);
-           
-            work =  workingPhases[k][thNb]; 
-            
-            work_nb = work_lengths[k][thNb];
-            int* index = workingIndexes[k][thNb];
-            
-            
-            for(int m = 0; m<work_nb; m++)
-            {
-                int ix = index[m*2+0];
-                int iy = index[m*2+1];
-                real a0 = work[BLOCKSIZE*BLOCKSIZE*m+0];
-                real a1 = work[BLOCKSIZE*BLOCKSIZE*m+1];
-                real a2 = work[BLOCKSIZE*BLOCKSIZE*m+2];
-                real a3 = work[BLOCKSIZE*BLOCKSIZE*m+3];
-                real a4 = work[BLOCKSIZE*BLOCKSIZE*m+4];
-                real a5 = work[BLOCKSIZE*BLOCKSIZE*m+5];
-                real a6 = work[BLOCKSIZE*BLOCKSIZE*m+6];
-                real a7 = work[BLOCKSIZE*BLOCKSIZE*m+7];
-                real a8 = work[BLOCKSIZE*BLOCKSIZE*m+8];
-                #if BLOCKSIZE ==4
-                real a9 = work[BLOCKSIZE*BLOCKSIZE*m+9];
-                real aA = work[BLOCKSIZE*BLOCKSIZE*m+10];
-                real aB = work[BLOCKSIZE*BLOCKSIZE*m+11];
-                real aC = work[BLOCKSIZE*BLOCKSIZE*m+12];
-                real aD = work[BLOCKSIZE*BLOCKSIZE*m+13];
-                real aE = work[BLOCKSIZE*BLOCKSIZE*m+14];
-                real aF = work[BLOCKSIZE*BLOCKSIZE*m+15];
-                #endif 
-                if(swap)
-                {
-                    X1 = X  + iy; 
-                    X2 = X  + ix;
-                    Y1_= Y1 + ix;
-                    Y2_= Y2 + iy;
-                    
-                }
-                else
-                {
-                    X1 = X  + iy;
-                    X2 = X  + ix;
-                    Y1_= Y2 + ix;
-                    Y2_= Y1 + iy;
-                    
-                    
-                }
-                if(ix-iy !=0)
-                {  
-                    #if BLOCKSIZE==4
-                        real y10 = 0;
-                        real y11 = 0;
-                        real y12=0;
-                        real y13=0;
-                        real y20 = 0;
-                        real y21 = 0;
-                        real y22 = 0;
-                        real y23=0;
-                        real r10 = X1[0];
-                        real r11 = X1[1];
-                        real r12 = X1[2];
-                        real r13 = X1[3];
-                        real r20 = X2[0];
-                        real r21 = X2[1];
-                        real r22 = X2[2];
-                        real r23 = X2[3];
-                        {real & c = a0;
-                            
-                            y10 += c*r10;
-                            y20 += c*r20;
-                        }
-                        {
-                            real & c = a1;
-                            y11 += c * r10;
-                            y20 += c * r21;
-                        }
-                        {
-                            real & c = a4;
-                            y10 += c * r11;
-                            y21 += c * r20;
-                        }
-                        {
-                            real & c = a2;
-                            y12 += c * r10;
-                            y20 += c * r22;
-                        }
-                        {
-                            real& c = a8;
-                            y10 += c * r12;
-                            y22 += c* r20;
-                        }
-                        {
-                            real & c = a3;
-                            y13 += c * r10;
-                            y20 += c * r23;
-                        }
-                        {
-                            real & c  = aC;
-                            y10 += c *r13;
-                            y23 += c * r20;
-                        }
-                        {
-                            real & c = a5;
-                            y11+= c*r11;
-                            y21 += c *r21;
-                        }
-                        {
-                            real & c=  a6;
-                            y12 += c*r11;
-                            y21 += c*r22;
-                        }
-                        {
-                            real & c = a9;
-                            y11 += c *r12;
-                            y22 += c *r21;
-                        }
-                        {
-                            real &c  = a7;
-                            y13 += c *r11;
-                            y21 += c * r23;
-                        }
-                        {
-                            real & c  = aD;
-                            y11 +=c*r13;
-                            y23 += c *r21;
-                        }
-                        {
-                            real & c  = aA;
-                            y12 += c * r12;
-                            y22 += c* r22;
-                        }
-                        {
-                            real & c = aE;
-                            y12 += c * r13;
-                            y23 += c * r22;
-                        }
-                        {
-                            real & c = aB;
-                            y13 += c * r12;
-                            y22 += c *r23;
-                        }
-                        {
-                            real & c = aF;
-                            y13 += c * r13;
-                            y23 += c *r23;
-                        }
-                        Y1_[0] += y10;
-                        Y1_[1] += y11;
-                        Y1_[2] += y12;
-                        Y1_[3] += y13;
-                        Y2_[0] += y20;
-                        Y2_[1] += y21;
-                        Y2_[2] += y22;
-                        Y2_[3] += y23;
-                    #endif 
-                    #if BLOCKSIZE==3
-                    real y10 = 0;
-                    real y11 = 0;
-                    real y12=  0;
-                    real y20 = 0;
-                    real y21 = 0;
-                    real y22 = 0;
-                    real r10 = X1[0];
-                    real r11 = X1[1];
-                    real r12 = X1[2];
-                    real r20 = X2[0];
-                    real r21 = X2[1];
-                    real r22 = X2[2];
-
-                        {real & c = a0;
-                            
-                            y10 += c*r10;
-                            y20 += c*r20;
-                        }
-                        {
-                            real & c = a1;
-                            y11 += c * r10;
-                            y20 += c * r21;
-                        }
-                        {
-                            real & c = a3;
-                            y10 += c * r11;
-                            y21 += c * r20;
-                        }
-                        {
-                            real & c = a2;
-                            y12 += c * r10;
-                            y20 += c * r22;
-                        }
-                        {
-                            real& c = a6;
-                            y10 += c * r12;
-                            y22 += c* r20;
-                        }
-                        {
-                            real & c = a4;
-                            y11 += c * r11;
-                            y21 += c * r21;
-                        }
-                        {
-                            real & c = a7;
-                            y11+= c*r12;
-                            y22 += c *r21;
-                        }
-                        {
-                            real & c = a5;
-                            y12 += c *r11;
-                            y21 += c *r22;
-                        }
-                        {
-                            real &c  = a8;
-                            y12 += c *r12;
-                            y22 += c * r22;
-                        }
-                    Y1_[0] += y10;
-                    Y1_[1] += y11;
-                    Y1_[2] += y12;
-                    Y2_[0] += y20;
-                    Y2_[1] += y21;
-                    Y2_[2] += y22;
-                    
-                        
-                    #endif 
-                    #if BLOCKSIZE==2
-                    #endif   
-                }
-                else
-                {
-                    
-                    #if BLOCKSIZE == 4
-                        Y1_[0] += a0 * X1[0] + a4 * X1[1] + a8 * X1[2] + aC * X1[3];
-                        Y1_[1] += a1 * X1[0] + a5 * X1[1] + a9 * X1[2] + aD * X1[3];
-                        Y1_[2] += a2 * X1[0] + a6 * X1[1] + aA * X1[2] + aE * X1[3];
-                        Y1_[3] += a3 * X1[0] + a7 * X1[1] + aB * X1[2] + aF * X1[3];
-                    #endif 
-                    #if BLOCKSIZE == 3 
-                        Y1_[0] += a0 * X1[0] + a3 * X1[1] + a6 * X1[2];
-                        Y1_[1] += a1 * X1[0] + a4 * X1[1] + a7 * X1[2];
-                        Y1_[2] += a2 * X1[0] + a5 * X1[1] + a8 * X1[2];
-                     
-                    #endif 
-                    
-                }
-            }
-            
-           
-            j++;
-            barrier2.arrive_and_wait();
-            
-        }
-        }
-    void workThread4(std::barrier<>& barrier2, int thNb)
-        {
-            int active_work_count;
             int j = 0;
             real* work;
             int work_nb;
@@ -638,7 +288,6 @@ public:
                 real acc_10 = 0;
                 real acc_11 = 0;
                 real acc_12 = 0;
-                
                 real acc_00 = 0;
                 real acc_01 = 0;
                 real acc_02 = 0;
@@ -1165,12 +814,10 @@ public:
                 j++;
             }
         }
-
-    void vecMulAddnTimes2(const real*X_calc, real*Y, int n_time)
+    void vecMulAddnTimes(const real*X_calc, real*Y, int n_time)
         {
 
         X= X_calc;
-        using milli = std::chrono::milliseconds;
         
         VLOG("Starting MT calculation");
         auto start = CLOCK
@@ -1187,13 +834,8 @@ public:
             std::barrier bar2(nbThreads);
             for(int i=0;i<nbThreads; i++)
             {
-                threads.emplace_back(&MatSymBMtInstance::work2, this, std::ref(bar), std::ref(bar2), n_time);
+                threads.emplace_back(&MatSymBMtInstance::work, this, std::ref(bar), std::ref(bar2), n_time);
             }
-            
-            
-            
-           
-            
             for (auto& thread : threads)
             {
                 thread.join();
@@ -1208,63 +850,9 @@ public:
         for(int i=0;i<big_mat_size;i++)
         {
                 
-                Y[i]+= Y1[i]+Y2[i];
-                
+                Y[i]+= Y1[i]+Y2[i];     
         }
-        
-    
         }
-
-    void vecMulAddnTimes4(const real*X_calc, real*Y, int n_time)
-        {
-
-        X= X_calc;
-        
-        VLOG("Starting MT calculation");
-        auto start = CLOCK
-        generateBlocks();
-        auto stop = CLOCK
-       
-
-        VLOG("Time spent generating blocks : "+CONV(COUNT_T(start,stop))+" ms");
-        
-               try
-        {
-            std::vector<std::thread> threads;
-            std::barrier bar(nbThreads);
-            std::barrier bar2(nbThreads);
-            for(int i=0;i<nbThreads; i++)
-            {
-                threads.emplace_back(&MatSymBMtInstance::work4, this, std::ref(bar), std::ref(bar2), n_time);
-            }
-            
-            
-            
-           
-            
-            for (auto& thread : threads)
-            {
-                thread.join();
-            }
-         
-        }
-        catch (const std::exception &e)
-        {
-            VLOGe("Exception occurred: "<<e.what());
-        
-        }
-        for(int i=0;i<big_mat_size;i++)
-        {
-                
-                Y[i]+= Y1[i]+Y2[i];
-                
-        }
-        
-    
-        }
-
-
-
 
 };
 
