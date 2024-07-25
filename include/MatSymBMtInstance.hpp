@@ -22,43 +22,36 @@
 #include <chrono>
 #include "sparmatsymblk.h"
 #include "real.h"
-
-
-
-
-
 class MatSymBMtInstance final
 {
 private:
-    int phase_number;
-    std::vector<int> valid_phase_index;
-    int* phase_tab;
+    //Mt utitilies 
     int nbThreads;
     std::mutex _mutex;
-    int big_mat_size;
+    //Vectors for calculation
     real* Y1;
     real* Y2;
     const real* X;
-    SparMatSymBlk* matrix;
+    //Original matrix info
+    SparMatSymBlk* matrix;//Pointer to original matrix
     int thNb =0;
     int threadBlockSize;
+    int underlyingMatSize;
+    //Storing blocks, in phases
     real*** workingPhases;
-
-
     int*** workingIndexes;
-   
-
     int** work_lengths;
+    std::vector<int> valid_phase_index;
 public:
     MatSymBMtInstance(SparMatSymBlk* matrix, int nbThreadsE)
     {
         nbThreads = nbThreadsE;
         this->matrix = matrix;
-        big_mat_size = matrix->size();
-        real* big_Y = (real*) malloc(big_mat_size*2*sizeof(real));
+        underlyingMatSize = matrix->size();
+        real* big_Y = (real*) malloc(underlyingMatSize*2*sizeof(real));
         Y1 = big_Y;
-        Y2 = big_Y + big_mat_size;
-        for(int i =0; i<big_mat_size;i++)
+        Y2 = big_Y + underlyingMatSize;
+        for(int i =0; i<underlyingMatSize;i++)
         {
             Y1[i] = 0;
             Y2[i] = 0;
@@ -70,7 +63,9 @@ public:
     
     void generateBlocks()
     {
+        int phase_number;
       
+        int* phase_tab;
         phase_tab = (int*) malloc(sizeof(int)*nbThreads);
         phase_tab[0] = 0;
         if(nbThreads%2==0)
@@ -190,50 +185,48 @@ public:
             
         }
         for(int i=0; i<phase_number; i++)
-        {
-            for(int j=0; j<nbThreads;j++)
             {
-                
-                
-                int t_work_length = (int)phasesTemp[i][j]->size();
-                work_lengths[i][j] = t_work_length;
-                
-                workingPhases[i][j] = (real*) malloc(sizeof(real)*t_work_length*BLOCKSIZE*BLOCKSIZE);
-                workingIndexes[i][j] = (int*) malloc(sizeof(int)*t_work_length*2);
-                
-                
-                for(int m=0; m<t_work_length; m++)
+                for(int j=0; j<nbThreads;j++)
                 {
-                    Block first= phasesTemp[i][j]->front();
-                    phasesTemp[i][j]->pop_front();
-                    workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m] = first.a0;
-                    workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+1] = first.a1;
-                    workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+2] = first.a2;
-                    workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+3] = first.a3;
-                    workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+4] = first.a4;
-                    #if BLOCKSIZE >=3
-                        workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+5] = first.a5;
-                        workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+6] = first.a6;
-                        workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+7] = first.a7;
-                        workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+8] = first.a8;
-                    #if BLOCKSIZE == 4
-                        workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+9] = first.a9;
-                        workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+10] = first.aA;
-                        workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+11] = first.aB;
-                        workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+12] = first.aC;
-                        workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+13] = first.aD;
-                        workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+14] = first.aE;
-                        workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+15] = first.aF;
-                    #endif 
-                    workingIndexes[i][j][2*m] = first.index_x;
-                    workingIndexes[i][j][2*m+1] = first.index_y;
+                    
+                    
+                    int t_work_length = (int)phasesTemp[i][j]->size();
+                    work_lengths[i][j] = t_work_length;
+                    
+                    workingPhases[i][j] = (real*) malloc(sizeof(real)*t_work_length*BLOCKSIZE*BLOCKSIZE);
+                    workingIndexes[i][j] = (int*) malloc(sizeof(int)*t_work_length*2);
+                    
+                    
+                    for(int m=0; m<t_work_length; m++)
+                    {
+                        Block first= phasesTemp[i][j]->front();
+                        phasesTemp[i][j]->pop_front();
+                        workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m] = first.a0;
+                        workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+1] = first.a1;
+                        workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+2] = first.a2;
+                        workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+3] = first.a3;
+                        workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+4] = first.a4;
+                        #if BLOCKSIZE >=3
+                            workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+5] = first.a5;
+                            workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+6] = first.a6;
+                            workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+7] = first.a7;
+                            workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+8] = first.a8;
+                        #if BLOCKSIZE == 4
+                            workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+9] = first.a9;
+                            workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+10] = first.aA;
+                            workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+11] = first.aB;
+                            workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+12] = first.aC;
+                            workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+13] = first.aD;
+                            workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+14] = first.aE;
+                            workingPhases[i][j][BLOCKSIZE*BLOCKSIZE*m+15] = first.aF;
+                        #endif 
+                        workingIndexes[i][j][2*m] = first.index_x;
+                        workingIndexes[i][j][2*m+1] = first.index_y;
+                    }
+                    
+                    
                 }
-                
-                
             }
-        }
-
-    
         for(int i =0; i<phase_number; i++)
         {
             int count = 0;
@@ -248,6 +241,7 @@ public:
         }
         
     }   
+    //Called once by each thread at the start of its work
     int thread_number()
     {
         thNb++;
@@ -297,8 +291,8 @@ public:
                 #endif 
                 int k  = valid_phase_index[j];
                 work =  workingPhases[k][thNb];
-                swap = thNb >= (nbThreads - k);
-                work_nb = work_lengths[k][thNb];
+                swap = thNb >= (nbThreads - k);//Swap criteria
+                work_nb = work_lengths[k][thNb];//number of block for this phase, this thread
                 int* index = workingIndexes[k][thNb];
                 X1 = X;
                 X2 = X;
@@ -816,17 +810,12 @@ public:
         }
     void vecMulAddnTimes(const real*X_calc, real*Y, int n_time)
         {
-
         X= X_calc;
-        
         VLOG("Starting MT calculation");
         auto start = CLOCK
         generateBlocks();
         auto stop = CLOCK
-       
-
         VLOG("Time spent generating blocks : "+CONV(COUNT_T(start,stop))+" ms");
-        
         try
         {
             std::vector<std::thread> threads;
@@ -847,13 +836,16 @@ public:
             VLOGe("Exception occurred: "<<e.what());
         
         }
-        for(int i=0;i<big_mat_size;i++)
+        for(int i=0;i<underlyingMatSize;i++)
         {
                 
                 Y[i]+= Y1[i]+Y2[i];     
         }
         }
 
+    //To branch a new type of matrix, we need to create a new 'generateBlocks' that would fetch blocks inside new matrix
+    //We can also create methods such as "AddBlock" to an existing MatSymBMtInstance matrix, to construct a matrix from row.
+    
 };
 
 #endif /* MatSymBMtInstance_hpp */
