@@ -45,7 +45,7 @@ public:
 		std::ifstream inputFile(file_name);
 		if(!inputFile)
 		{
-			VLOGe("Couldn't read "+CONV(file_name)+);	
+			VLOGe("Couldn't read "+CONV(file_name));	
 		}
 		else
 		{

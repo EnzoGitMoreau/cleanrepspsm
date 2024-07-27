@@ -163,7 +163,9 @@
         auto stop= CLOCK
         OPEN_OUTFILE;
         SparMatSymBlk testMatrix = SparMatSymBlk();
+        #ifdef MATSYM
         MatrixSymmetric symMatrix = MatrixSymmetric();
+        #endif 
         int size = 0;
         int nb_threads;
         int nMatrix = 1;
@@ -273,15 +275,16 @@
                 add_block_to_pos_rsb(&mtx, &testMatrix, pairs, size);
             #endif 
             #endif 
-            VLOG("Constructed matrix of size "+CONV(size)<<" with "+CONV((size*block_percentage/BLOCKSIZE)*(size*block_percentage/BLOCKSIZE))+" blocks of size "+CONV(BLOCKSIZE));
-            VLOG("Preparing to do"+CONV(nMatrix)+" multiplications");
+            #ifdef MATSYM
+                VLOG("Constructed matrix of size "+CONV(size)<<" with "+CONV((size*block_percentage/BLOCKSIZE)*(size*block_percentage/BLOCKSIZE))+" blocks of size "+CONV(BLOCKSIZE));
+                VLOG("Preparing to do"+CONV(nMatrix)+" multiplications");
 
-            VLOG("Constructing Symmetric Matrix from SPSM");
-            symMatrix.resize(size);
-            symMatrix.reset();
-            SPSMtoSym(&symMatrix, &testMatrix);
-            VLOG("Conducted properly");
-
+                VLOG("Constructing Symmetric Matrix from SPSM");
+                symMatrix.resize(size);
+                symMatrix.reset();
+                SPSMtoSym(&symMatrix, &testMatrix);
+                VLOG("Conducted properly");
+            #endif 
         #endif
         
 //------------------------------Reading given matrix------------------------------------------------
@@ -383,7 +386,11 @@
             LOG_VALUE(start, stop);
             VLOG("Cytosim multiplications done in "+CONV(COUNT_T(start,stop))+" ms");
         #endif 
-        #ifdef CYTOSIM_ORIGINAL
+        #ifndef CYTOSIM_ORIGINAL
+        LOG_NULL;
+        #endif
+        #ifdef MATSYM
+            
             VLOG("SymmetricMatrix multiplications");
             start = CLOCK
             for(int i=0; i<nMatrix;i++)
@@ -394,8 +401,8 @@
             LOG_VALUE(start, stop);
             VLOG("SymmetricMatrix multiplications done in "+CONV(COUNT_T(start,stop))+" ms");
         #endif 
-        #ifndef CYTOSIM_ORIGINAL
-        LOG_NULL
+        #ifndef MATSYM
+        LOG_NULL;
         #endif 
         #ifdef CYTOSIM_TEST
             VLOG("Starting new-impl matrix-vector multiplications");
