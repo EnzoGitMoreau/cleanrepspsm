@@ -7,7 +7,7 @@ ARM_PER_LIB = /opt/arm/armpl_24.04_flang-new_clang_18#Default path, please chang
 
 CURRENT_DIR = $(shell pwd)
 EXEC = tests
-CXXFLAGS =  -Xclang -std=c++20 -fopenmp=libomp -O3 -flto -Wall
+CXXFLAGS =  -Xclang -std=c++20 -fopenmp=libomp -O3 -flto
 VARS = -DMATRIXMARKET -DMACOS
 CXX = $(LLVM_PATH)bin/clang++
 CC = $(LLVM_PATH)bin/clang
@@ -38,6 +38,8 @@ OBJS = $(SRCS:.cpp=.o)
 OBJS := $(OBJS:.cc=.o)
 TARGET = $(EXEC)
 BLOCKSIZE = 3
+mkl-implement:
+	$(MAKE) -f Makefile.linux VARS="-DCYTMAT -DCYTOSIM -DCYTOSIM_ORIGINAL -DMKL -DBLOCKSIZE=$(BLOCKSIZE) $(VERBOSE)"
 macOS:
 	$(MAKE) all VARS="-DMACOS -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW -DCYTOSIM_TEST -DBLOCKSIZE=$(BLOCKSIZE) $(VERBOSE)"
 macOS-mmkt:
@@ -45,7 +47,7 @@ macOS-mmkt:
 macOS-cytosimMat:
 	$(MAKE) all VARS="-DCYTMAT -DMACOS -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW -DCYTOSIM_TEST -DBLOCKSIZE=$(BLOCKSIZE) $(VERBOSE)"
 linux:
-	$(MAKE) -f Makefile.linux VARS="-DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW -DRSB -DBLOCKSIZE=$(BLOCKSIZE) $(VERBOSE)"
+	$(MAKE) -f Makefile.linux VARS="-DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW -DCYTOSIM_TEST  -DBLOCKSIZE=$(BLOCKSIZE) $(VERBOSE)"
 linux-mmkt:
 	$(MAKE) -f Makefile.linux VARS="-DMATRIXMARKET -DCYTOSIM -DCYTOSIM_ORIGINAL -DCYTOSIM_NEW -DCYTOSIM_TEST -DRSB -DBLOCKSIZE=$(BLOCKSIZE) $(VERBOSE)"
 linux-cytosimMat:

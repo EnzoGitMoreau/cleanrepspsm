@@ -152,7 +152,7 @@ void SPSMtoSym(MatrixSymmetric* dest, SparMatSymBlk* origin)
 
         #endif 
         #if BLOCKSIZE ==4
-        Matrix44 &M=col.blk_[n];
+        Matrix44 &M=col->blk_[n];
         #endif 
         #if BLOCKSIZE ==2
         Matrix22 & M = col.blk_[n];

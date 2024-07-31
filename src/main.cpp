@@ -46,6 +46,7 @@
         #endif 
     #endif 
 #endif
+
 #ifndef UNVALID
     #ifdef MATRIXMARKET
         #include "matrix_market_reader.hpp"
@@ -153,6 +154,11 @@
             return mtx;
         }
     #endif 
+    #ifdef MKL
+    #include <mkl.h>
+    #include <mkl_types.h>
+    #include <mkl_spblas.h>
+    #endif
 
 
 
@@ -297,22 +303,36 @@
                 rsb::RsbLib rsblib;
                 rsb::RsbMatrix<double>* mtx;
                 MatrixReader matrixReader(inputPath, &testMatrix,&mtx,nb_threads);
-           
             #endif
             size = matrixReader.problemSize();
         #endif 
 //------------------------------Reading given matrix + given vector------------------------------------------------
         #ifdef CYTMAT
+            #ifdef MKL 
+                sparse_matrix_t* mklMatrix;
+            #endif 
+            #ifdef RSB 
+                rsb::RsbLib rsblib;
+                rsb::RsbMatrix<double>* mtx;
+            #endif
             real* Vec;
             VLOG("Asked to read "+CONV(matPath)+" and "+CONV(vectorPath)+ " and to do "+CONV(nMatrix)+" mult with "+CONV(nb_threads)+" threads");
             #ifndef RSB 
+                #ifndef MKL
                 CytMatrixReader CytmatrixReader(matPath,vectorPath, &testMatrix,&Vec,nb_threads);
-            #endif 
+                #endif
+                #ifdef MKL 
+                CytMatrixReader CytmatrixReader(matPath, vectorPath, &testMatrix,&mklMatrix, &Vec, nb_threads);
+                #endif 
+            #endif  
             #ifdef RSB 
-            rsb::RsbLib rsblib;
-            rsb::RsbMatrix<double>* mtx;
-            
-            CytMatrixReader CytmatrixReader(matPath, vectorPath, &testMatrix,&mtx, &Vec, nb_threads);
+                
+                #ifndef MKL 
+                CytMatrixReader CytmatrixReader(matPath, vectorPath, &testMatrix,&mtx, &Vec, nb_threads);
+                #endif 
+                #ifdef MKL 
+                CytMatrixReader CytmatrixReader(matPath, vectorPath, &testMatrix,&mtx,&mklMatrix, &Vec, nb_threads);
+                #endif
             #endif
             VLOG("Finished reading matrix and vector");
             size = CytmatrixReader.problemSize();
@@ -358,6 +378,8 @@
             start = CLOCK
             y_arm = amd_matrix_vecmul(size, nMatrix, pairs);
             stop= STOP_T
+            
+
             VLOG("ARMPL multiplications done in "+CONV(COUNT_T(start,stop))+" ms");
             outfile1 << COUNT_T(start,stop)<<" ";
         #endif 
@@ -433,16 +455,24 @@
         
         
         LOG_DIFF(Y_res, Y_true, size, "V1","Correct")
+        #ifdef CYTOSIM_TEST
         LOG_DIFF(Y_test, Y_true, size, "V2","Correct")
+        #endif 
+        #ifdef MATSYM
         LOG_DIFF(Y_sym, Y_true, size, "MatrixSymmetric","Correct")
+        #endif
         #ifdef RSB
             LOG_DIFF(Y_rsb, Y_true, size, "RSB","Correct")
         #endif
         DIFF_FILE
         LOG_VEC(Y_res, size, "Version 1")
         LOG_VEC(Y_true, size, "Cytosim")
+        #ifdef MATSYM
         LOG_VEC(Y_sym, size, "MatrixSymmetric")
+        #endif
+        #ifdef CYTOSIM_TEST
         LOG_VEC(Y_test, size, "Version 2")
+        #endif
         #ifdef RSB 
             LOG_VEC(Y_rsb, size, "LibRSB")
         #endif

@@ -22,15 +22,16 @@ try:
 	from tqdm import tqdm
 except:
 	print("Requirement 'tqdm' not satisfied, trying to install automatically...")
-	subprocess.run(["pip"]+["install","tqdm"], capture_output = True)
+	
 	try:
+		subprocess.run(["pip"]+["install","tqdm"])
 		from tqdm import tqdm
 		print("Requirement 'tqdm' installed sucessfully")
 	except:
 		print("Could not install automatically, installing pip...")
-		subprocess.run(["python","m","ensurepip","--upgrade"])
+		subprocess.run(["python","-m","ensurepip","--upgrade"])
 		print("pip installed, re-trying to install 'tqdm")
-		subprocess.run(["pip"]+["install","tqdm"], capture_output = True)
+		subprocess.run(["pip"]+["install","tqdm"])
 		try:
 			from tqdm import tqdm
 			print("Requirement 'tqdm' installed sucessfully")
@@ -56,15 +57,15 @@ except:
 		except:
 			print("Automatical installation failed")
 #BASE VALUES
-DEFAULT_MATRIXSIZE = 10000
-DEFAULT_NBMULTIPLICATION = 100
-DEFAULT_BLOCKPERCENTAGE = 0.01
+DEFAULT_MATRIXSIZE = 20000
+DEFAULT_NBMULTIPLICATION = 1000
+DEFAULT_BLOCKPERCENTAGE = 0.2
 DEFAULT_NBTHREADS = 4
 
 
 #
 #if no Internet please comment the line 7 
-#plt.style.use('https://github.com/dhaitz/matplotlib-stylesheets/raw/master/pitayasmoothie-light.mplstyle')
+plt.style.use('https://github.com/dhaitz/matplotlib-stylesheets/raw/master/pitayasmoothie-light.mplstyle')
 
 
 #plt.style.use('seaborn')
@@ -156,7 +157,7 @@ class TestInstance():
 		print("Running with : "+str(parameters))
 		args = [str(param.value) for param in self.possible_parameters]
 		command = [self.executable_path] + args
-		result = subprocess.run(command, capture_output=True, text=True)
+		result = subprocess.run(command)
 		f = open("res/compute.out")
 		f.readline()#skipping first line
 		res = f.readline().strip().split(self.separator)
@@ -176,6 +177,7 @@ class TestInstance():
 			plt.xlabel(self.variating_parameter.name)
 			plt.ylabel("Computational time")
 			plt.show()
+			plt.savefig("lastgraph.png")
 		else:
 			raise Exception("Do not run createGraph before runTests")
 
